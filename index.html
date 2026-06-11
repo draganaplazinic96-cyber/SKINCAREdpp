@@ -62,49 +62,47 @@ html,body {
   padding:max(env(safe-area-inset-top,0px),14px) 20px max(env(safe-area-inset-bottom,0px),12px);
 
   /* Base parchment — warm yellowed paper */
-  background-color:#d4b878;
+  background-color:#0e0c07;
 
   /* Aged, uneven toning — darker at edges, lighter center, stains */
   background-image:
-    /* dark burned corners */
-    radial-gradient(ellipse at 0% 0%,   rgba(60,30,5,0.72) 0%, transparent 38%),
-    radial-gradient(ellipse at 100% 0%,  rgba(50,25,5,0.65) 0%, transparent 35%),
-    radial-gradient(ellipse at 0% 100%,  rgba(55,28,5,0.68) 0%, transparent 35%),
-    radial-gradient(ellipse at 100% 100%,rgba(60,30,5,0.72) 0%, transparent 38%),
-    /* age spots / water damage blobs */
-    radial-gradient(ellipse at 30% 20%,  rgba(100,60,10,0.18) 0%, transparent 25%),
-    radial-gradient(ellipse at 75% 65%,  rgba(80,45,8,0.15)  0%, transparent 22%),
-    radial-gradient(ellipse at 15% 80%,  rgba(90,50,10,0.14) 0%, transparent 18%),
-    radial-gradient(ellipse at 85% 30%,  rgba(70,40,8,0.12)  0%, transparent 20%),
-    /* general aged tone variation */
-    radial-gradient(ellipse at 50% 50%,  rgba(220,185,110,0.3) 0%, transparent 65%);
+    /* deep corner burns — like cover */
+    radial-gradient(ellipse at 0%   0%,   rgba(0,0,0,0.82) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 0%,   rgba(0,0,0,0.76) 0%, transparent 38%),
+    radial-gradient(ellipse at 0%   100%, rgba(0,0,0,0.76) 0%, transparent 38%),
+    radial-gradient(ellipse at 100% 100%, rgba(0,0,0,0.82) 0%, transparent 40%),
+    /* subtle warm center — aged leather glow */
+    radial-gradient(ellipse at 50% 45%, rgba(38,24,8,0.5) 0%, transparent 60%),
+    /* leather tonal variation */
+    radial-gradient(ellipse at 28% 30%, rgba(28,18,5,0.3) 0%, transparent 30%),
+    radial-gradient(ellipse at 72% 70%, rgba(24,15,4,0.25) 0%, transparent 28%);
 
-  color:#1a0e04;
+  color:#e8dbb8;
 }
 
 /* Paper grain / fiber texture */
 .pg::before {
   content:''; position:absolute; inset:0; pointer-events:none; z-index:2; opacity:.35;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.3 0.2 0.1 0 0.05 0.25 0.18 0.08 0 0.03 0.1 0.08 0.05 0 0.01 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
 }
 
 /* Feathered dark edge — like old book page margin burn */
 .pg::after {
   content:''; position:absolute; inset:0; pointer-events:none; z-index:3;
   box-shadow:
-    inset 0 0 28px rgba(40,18,2,0.55),
-    inset 0 0 8px  rgba(30,12,2,0.35);
+    inset 0 0 40px rgba(0,0,0,0.7),
+    inset 0 0 12px rgba(0,0,0,0.4);
 }
 
 /* Extra right-edge shadow (binding) */
 .vign {
   position:absolute; inset:0; pointer-events:none; z-index:4;
-  background:linear-gradient(to right, transparent 85%, rgba(20,10,2,0.25));
+  background:linear-gradient(to right, transparent 85%, rgba(0,0,0,0.3));
 }
 
 /* Corner ornaments — dark ink */
 .co {
-  position:absolute; font-size:11px; color:#3d2208; opacity:.5;
+  position:absolute; font-size:11px; color:#6a4c18; opacity:.4;
   pointer-events:none; z-index:5; font-family:'Cinzel',serif; line-height:1;
 }
 .tl{top:6px;left:7px} .tr{top:6px;right:7px}
@@ -115,7 +113,7 @@ html,body {
   bottom:max(env(safe-area-inset-bottom,0px),5px);
   left:50%; transform:translateX(-50%);
   font-family:'Cinzel',serif; font-size:7.5px;
-  color:#5a3210; letter-spacing:3px; opacity:.55;
+  color:#7a5828; letter-spacing:3px; opacity:.5;
   pointer-events:none; z-index:5;
 }
 
@@ -126,27 +124,27 @@ html,body {
 }
 .hdr::after {
   content:''; position:absolute; left:6%; right:6%; bottom:0;
-  border-top:1px solid rgba(80,40,8,0.35);
+  border-top:1px solid rgba(100,70,20,0.4);
 }
 .dtitle {
   font-family:'Cinzel Decorative',serif; font-size:12.5px; font-weight:700;
-  color:#2a1204; letter-spacing:2px; text-transform:uppercase;
+  color:#d4aa60; letter-spacing:2px; text-transform:uppercase;
   text-shadow:0 1px 0 rgba(255,220,150,0.2);
 }
 .dsub {
   font-family:'Cormorant Garamond',serif; font-style:italic;
-  font-size:9px; color:#5a3015; margin-top:1px; opacity:.8;
+  font-size:9px; color:#9a8055; margin-top:1px; opacity:.9;
 }
 .dglyph {
-  font-family:'Cinzel',serif; font-size:8.5px; color:#7a4818;
+  font-family:'Cinzel',serif; font-size:8.5px; color:#6a5028;
   opacity:.55; letter-spacing:5px; margin-top:2px;
 }
 .inc {
   font-family:'Italianno',cursive; font-size:15px;
-  color:#5a2808; text-align:center; margin-top:4px;
+  color:#b07838; text-align:center; margin-top:4px;
   letter-spacing:.3px; opacity:.8;
-  border-top:1px solid rgba(80,40,8,0.25);
-  border-bottom:1px solid rgba(80,40,8,0.25);
+  border-top:1px solid rgba(160,100,30,0.3);
+  border-bottom:1px solid rgba(160,100,30,0.3);
   padding:2px 0;
 }
 
@@ -155,18 +153,18 @@ html,body {
 .badge {
   display:inline-flex; align-items:center; gap:4px;
   font-family:'Cinzel',serif; font-size:7.5px; letter-spacing:2px;
-  text-transform:uppercase; color:#3a1a06;
+  text-transform:uppercase; color:#b09050;
   padding:2px 14px; margin-bottom:3px;
-  border:1px solid rgba(80,40,10,0.4);
-  background:rgba(180,120,40,0.12);
+  border:1px solid rgba(120,85,25,0.45);
+  background:rgba(30,20,6,0.6);
 }
 .badge::before,.badge::after { content:'✦'; font-size:5px; opacity:.5; }
 
 .wbar {
-  background:rgba(140,60,10,0.1); border:1px dashed rgba(140,70,15,0.4);
+  background:rgba(120,50,8,0.2); border:1px dashed rgba(160,80,20,0.45);
   padding:3px 8px; margin-bottom:4px;
   font-family:'Cormorant Garamond',serif; font-style:italic; font-size:8.5px;
-  color:#7a2e08; text-align:center; line-height:1.35;
+  color:#c06030; text-align:center; line-height:1.35;
   position:relative; z-index:5;
 }
 
@@ -178,7 +176,7 @@ html,body {
 }
 .hdiv::before,.hdiv::after {
   content:''; flex:1; height:1px;
-  background:linear-gradient(to right,transparent,rgba(90,50,10,0.5),transparent);
+  background:linear-gradient(to right,transparent,rgba(140,90,25,0.45),transparent);
 }
 
 /* ── RITUAL LIST ── */
@@ -188,13 +186,13 @@ html,body {
 }
 .ri {
   display:flex; align-items:baseline;
-  border-bottom:1px solid rgba(80,45,8,0.2);
+  border-bottom:1px solid rgba(100,72,20,0.22);
   padding:2.8px 0;
 }
 .ri:last-child { border-bottom:none; }
 .ri.led {
-  background:linear-gradient(90deg,rgba(120,80,20,0.1),transparent);
-  box-shadow:inset 2.5px 0 0 rgba(130,80,20,0.4);
+  background:linear-gradient(90deg,rgba(140,100,30,0.14),transparent);
+  box-shadow:inset 2.5px 0 0 rgba(160,110,35,0.5);
   padding-left:3px;
 }
 .ri-i {
@@ -204,28 +202,28 @@ html,body {
 .ri-n {
   flex:0 0 auto; width:46%;
   font-family:'Cormorant Garamond',serif; font-size:9.5px;
-  color:#1a0c04; font-weight:700; line-height:1.22;
+  color:#e8dbb8; font-weight:700; line-height:1.22;
   padding-right:5px;
 }
 .ri-t {
   flex:1;
   font-family:'Cormorant Garamond',serif; font-style:italic; font-size:8.5px;
-  color:#3d2008; opacity:.88; line-height:1.22;
+  color:#b09a72; opacity:.92; line-height:1.22;
 }
-.rw { color:#8a2e08; font-style:normal; font-weight:700; opacity:1; }
+.rw { color:#d07838; font-style:normal; font-weight:700; opacity:1; }
 
 .ispr {
   display:flex; align-items:center; gap:6px;
-  padding:3px 0; border-bottom:1px solid rgba(80,45,8,0.2);
+  padding:3px 0; border-bottom:1px solid rgba(100,72,20,0.22);
   position:relative; z-index:5;
 }
 .ispr::before,.ispr::after {
   content:''; flex:1; height:1px;
-  background:linear-gradient(to right,transparent,rgba(60,80,30,0.45),transparent);
+  background:linear-gradient(to right,transparent,rgba(80,105,40,0.5),transparent);
 }
 .ispr span {
   font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:2px;
-  color:#3d5018; text-transform:uppercase; white-space:nowrap;
+  color:#6a8838; text-transform:uppercase; white-space:nowrap;
 }
 
 /* ═══════════════════════════════════
@@ -271,10 +269,10 @@ html,body {
 
 /* ── COLOPHON ── */
 .colophon{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:14px;position:relative;z-index:5;}
-.fin{font-family:'Cinzel Decorative',serif;font-size:14px;color:#2a1204;letter-spacing:6px;text-transform:uppercase;}
-.verse{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:#4a2a10;opacity:.8;line-height:1.85;}
-.rule{width:44%;height:1px;background:linear-gradient(to right,transparent,rgba(80,45,10,0.45),transparent);}
-.fincurses{font-family:'Italianno',cursive;font-size:14px;color:#5a2808;opacity:.72;line-height:2.2;}
+.fin{font-family:'Cinzel Decorative',serif;font-size:14px;color:#c8a050;letter-spacing:6px;text-transform:uppercase;}
+.verse{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:#9a8055;opacity:.8;line-height:1.85;}
+.rule{width:44%;height:1px;background:linear-gradient(to right,transparent,rgba(150,100,30,0.5),transparent);}
+.fincurses{font-family:'Italianno',cursive;font-size:14px;color:#b07838;opacity:.72;line-height:2.2;}
 
 
 /* Scrollable list container */
@@ -977,7 +975,7 @@ function rsz(){cv.width=book.offsetWidth;cv.height=book.offsetHeight;}
 rsz();
 
 // Page color — matches the parchment
-const PAGE_R=212, PAGE_G=184, PAGE_B=120;
+const PAGE_R=20, PAGE_G=16, PAGE_B=8;
 
 function ease(t){return t<.5?2*t*t:-1+(4-2*t)*t;}
 
@@ -1039,10 +1037,10 @@ function drawFlip(t,dir){
     br=Math.max(.2,Math.min(1.05,br));
 
     // Parchment color with age variation per strip
-    const jitter=(Math.sin(i*7.3)*0.04); // subtle tonal variation
-    const r=Math.round((PAGE_R+jitter*30)*br);
-    const g=Math.round((PAGE_G+jitter*20)*br);
-    const b=Math.round((PAGE_B+jitter*8)*br);
+    const jitter=(Math.sin(i*7.3)*0.04);
+    const r=Math.round((PAGE_R+jitter*8)*br);
+    const g=Math.round((PAGE_G+jitter*5)*br);
+    const b=Math.round((PAGE_B+jitter*3)*br);
 
     // strip vertices with curl
     const x0=sx;
