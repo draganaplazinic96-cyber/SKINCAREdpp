@@ -2,1042 +2,1162 @@
 <html lang="sr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grimoire Eliksira Mladosti</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Codex Veneficae</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Italianno&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #1a0a00;
-    --parchment: #f2e5b8;
-    --parchment-dark: #e4d490;
-    --parchment-shadow: #c0963c;
-    --blood: #7a0000;
-    --gold: #c9a84c;
-    --gold-light: #e8c96a;
-    --copper: #b87333;
-    --emerald: #1a4a2e;
-    --smoke: #3d2b1f;
-    --spine: #2a1505;
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+html,body {
+  width:100%; height:100%;
+  background:#1a1208;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+  font-family:'Cormorant Garamond',serif;
+  overscroll-behavior:none;
+}
 
-  body {
-    background: #080200;
-    width: 100vw; height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'IM Fell English', serif;
-    overflow: hidden;
-    user-select: none;
-  }
+#book {
+  position:relative;
+  width:100vw; height:100svh; height:100dvh;
+  max-width:480px; max-height:900px;
+  filter:drop-shadow(0 0 60px rgba(0,0,0,0.95));
+}
 
-  #book {
-    width: 820px; height: 560px;
-    position: relative;
-    filter: drop-shadow(0 24px 48px rgba(0,0,0,0.95)) drop-shadow(0 4px 12px rgba(0,0,0,0.7));
-  }
+.spine {
+  display:none; /* hidden on mobile, shown on desktop */
+  position:absolute; left:-20px; top:0;
+  width:20px; height:100%;
+  background:linear-gradient(90deg,#0e0a04,#2a1e0a 50%,#1a1206);
+  border-radius:3px 0 0 3px;
+}
+@media(min-width:500px){
+  .spine { display:flex; align-items:center; justify-content:center; overflow:hidden; }
+}
+.spine-text {
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-family:'Cinzel',serif; font-size:5.5px;
+  color:#6b4c1a; letter-spacing:3px; opacity:.5; text-transform:uppercase;
+}
 
-  .spine {
-    position: absolute; left: -26px; top: 0;
-    width: 26px; height: 100%;
-    background: linear-gradient(90deg, #050100, #2a1505 40%, #3d1f08 60%, #2a1505);
-    border-radius: 3px 0 0 3px;
-    display: flex; align-items: center; justify-content: center; overflow: hidden;
-  }
-  .spine-text {
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    font-family: 'Cinzel', serif; font-size: 7px;
-    color: var(--gold); letter-spacing: 3px; opacity: 0.5; text-transform: uppercase;
-  }
+.click-prev,.click-next {
+  position:absolute; top:0; width:22%; height:100%; z-index:50; cursor:pointer;
+}
+.click-prev{left:0} .click-next{right:0}
 
-  .click-prev, .click-next {
-    position: fixed; top: 0; width: 18vw; height: 100vh; z-index: 50;
-  }
-  .click-prev { left: 0; cursor: w-resize; }
-  .click-next { right: 0; cursor: e-resize; }
+.spread { position:absolute; inset:0; display:none; }
+.spread.active { display:block; }
 
-  .spread {
-    position: absolute; inset: 0;
-    display: none;
-  }
-  .spread.active { display: flex; }
+#flip-canvas {
+  position:absolute; inset:0;
+  pointer-events:none; z-index:100;
+}
 
-  #flip-canvas {
-    position: absolute; inset: 0;
-    pointer-events: none; z-index: 100;
-    overflow: hidden; border-radius: 0 3px 3px 0;
-  }
+/* ═══════════════════════════════════
+   OLD PAPER PAGE
+═══════════════════════════════════ */
+.pg {
+  width:100%; height:100%;
+  position:relative; overflow:hidden;
+  padding:max(env(safe-area-inset-top,0px),14px) 20px max(env(safe-area-inset-bottom,0px),12px);
 
-  .pg {
-    width: 50%; height: 100%;
-    position: relative; overflow: hidden;
-    padding: 16px 15px 12px;
-  }
-  .pg-l {
-    background: linear-gradient(108deg, var(--parchment-dark) 0%, var(--parchment) 100%);
-    border-right: 1px solid var(--parchment-shadow);
-  }
-  .pg-r {
-    background: linear-gradient(252deg, var(--parchment-dark) 0%, var(--parchment) 100%);
-  }
-  .pg::before {
-    content:''; position:absolute; inset:0; pointer-events:none; z-index:8; opacity:.3;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  }
-  .pg-r::after {
-    content:''; position:absolute; right:0; top:0; width:18px; height:100%;
-    background: linear-gradient(to right, transparent, rgba(0,0,0,0.07));
-    pointer-events:none; z-index:9;
-  }
+  /* Base parchment — warm yellowed paper */
+  background-color:#d4b878;
 
-  .co { position:absolute; font-size:12px; color:var(--parchment-shadow); opacity:.4; pointer-events:none; z-index:2; line-height:1; }
-  .co-tl{top:4px;left:4px} .co-tr{top:4px;right:4px} .co-bl{bottom:4px;left:4px} .co-br{bottom:4px;right:4px}
+  /* Aged, uneven toning — darker at edges, lighter center, stains */
+  background-image:
+    /* dark burned corners */
+    radial-gradient(ellipse at 0% 0%,   rgba(60,30,5,0.72) 0%, transparent 38%),
+    radial-gradient(ellipse at 100% 0%,  rgba(50,25,5,0.65) 0%, transparent 35%),
+    radial-gradient(ellipse at 0% 100%,  rgba(55,28,5,0.68) 0%, transparent 35%),
+    radial-gradient(ellipse at 100% 100%,rgba(60,30,5,0.72) 0%, transparent 38%),
+    /* age spots / water damage blobs */
+    radial-gradient(ellipse at 30% 20%,  rgba(100,60,10,0.18) 0%, transparent 25%),
+    radial-gradient(ellipse at 75% 65%,  rgba(80,45,8,0.15)  0%, transparent 22%),
+    radial-gradient(ellipse at 15% 80%,  rgba(90,50,10,0.14) 0%, transparent 18%),
+    radial-gradient(ellipse at 85% 30%,  rgba(70,40,8,0.12)  0%, transparent 20%),
+    /* general aged tone variation */
+    radial-gradient(ellipse at 50% 50%,  rgba(220,185,110,0.3) 0%, transparent 65%);
 
-  .pgnum { position:absolute; bottom:4px; font-family:'Cinzel',serif; font-size:7px; color:var(--parchment-shadow); letter-spacing:2px; pointer-events:none; z-index:3; }
-  .pg-l .pgnum{left:14px} .pg-r .pgnum{right:14px}
+  color:#1a0e04;
+}
 
-  .day-hdr { text-align:center; margin-bottom:6px; padding-bottom:5px; border-bottom:1.5px solid var(--parchment-shadow); }
-  .day-title { font-family:'Cinzel Decorative',serif; font-size:10.5px; font-weight:700; color:var(--blood); letter-spacing:1.5px; text-transform:uppercase; }
-  .day-sub { font-family:'IM Fell English',serif; font-style:italic; font-size:8px; color:var(--smoke); opacity:.65; margin-top:1px; }
+/* Paper grain / fiber texture */
+.pg::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:2; opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.3 0.2 0.1 0 0.05 0.25 0.18 0.08 0 0.03 0.1 0.08 0.05 0 0.01 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
-  .badge { display:inline-flex; align-items:center; gap:3px; font-family:'Cinzel',serif; font-size:7px; letter-spacing:2px; text-transform:uppercase; color:var(--parchment); padding:2px 8px; margin-bottom:4px; }
-  .badge::before,.badge::after{content:'✦';font-size:4px;opacity:.6}
-  .badge.am{background:#7a4a1a} .badge.pm{background:var(--smoke)}
+/* Feathered dark edge — like old book page margin burn */
+.pg::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:3;
+  box-shadow:
+    inset 0 0 28px rgba(40,18,2,0.55),
+    inset 0 0 8px  rgba(30,12,2,0.35);
+}
 
-  .warn-bar { background:rgba(122,0,0,0.06); border:1px dashed rgba(122,0,0,0.28); padding:2px 6px; margin-bottom:4px; font-family:'IM Fell English',serif; font-style:italic; font-size:7.5px; color:var(--blood); text-align:center; line-height:1.35; }
+/* Extra right-edge shadow (binding) */
+.vign {
+  position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:linear-gradient(to right, transparent 85%, rgba(20,10,2,0.25));
+}
 
-  .rlist { list-style:none; width:100%; }
-  .ri { display:grid; grid-template-columns:12px 1fr 1fr; gap:3px; padding:2px 0; border-bottom:1px dashed rgba(139,107,50,0.18); align-items:baseline; }
-  .ri:last-child{border-bottom:none}
-  .ri-ico{font-size:8px;filter:sepia(.4)}
-  .ri-name{font-family:'IM Fell English',serif;font-size:8.5px;color:var(--ink);font-weight:bold;line-height:1.2}
-  .ri-note{font-family:'IM Fell English',serif;font-style:italic;font-size:7.5px;color:var(--smoke);opacity:.7;line-height:1.2}
-  .ri-warn{color:var(--blood);font-style:normal;font-weight:bold}
+/* Corner ornaments — dark ink */
+.co {
+  position:absolute; font-size:11px; color:#3d2208; opacity:.5;
+  pointer-events:none; z-index:5; font-family:'Cinzel',serif; line-height:1;
+}
+.tl{top:6px;left:7px} .tr{top:6px;right:7px}
+.bl{bottom:7px;left:7px} .br{bottom:7px;right:7px}
 
-  .sec-div{border-top:1px solid var(--parchment-shadow);margin:6px 0 4px}
-  .sec-title{font-family:'Cinzel Decorative',serif;font-size:9px;color:var(--emerald);letter-spacing:1.5px;text-align:center;margin-bottom:3px}
+.pgn {
+  position:absolute;
+  bottom:max(env(safe-area-inset-bottom,0px),5px);
+  left:50%; transform:translateX(-50%);
+  font-family:'Cinzel',serif; font-size:7.5px;
+  color:#5a3210; letter-spacing:3px; opacity:.55;
+  pointer-events:none; z-index:5;
+}
 
-  /* ── COVER ── */
-  #spread-cover { border-radius:0 3px 3px 0; overflow:hidden; }
-  .cover-full { width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer; }
-  .cover-full::before {
-    content:'';position:absolute;inset:0;
-    background:
-      radial-gradient(ellipse at 30% 20%, #3a1a08 0%, transparent 55%),
-      radial-gradient(ellipse at 70% 85%, #260c03 0%, transparent 55%),
-      radial-gradient(ellipse at 50% 50%, #1c0901 0%, #080200 100%);
-  }
-  .c-frame1{position:absolute;inset:10px;border:2.5px solid #6a4e18;pointer-events:none}
-  .c-frame2{position:absolute;inset:14px;border:1px solid rgba(201,168,76,0.22);pointer-events:none}
-  .c-frame3{position:absolute;inset:18px;border:1px solid rgba(201,168,76,0.1);pointer-events:none}
-  .c-band{position:absolute;left:32px;right:32px;height:26px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(201,168,76,0.25);border-bottom:1px solid rgba(201,168,76,0.15);background:linear-gradient(180deg,rgba(201,168,76,0.04) 0%,rgba(80,40,10,0.12) 50%,rgba(201,168,76,0.03) 100%)}
-  .c-band.top{top:32px} .c-band.bot{bottom:32px;border-top:1px solid rgba(201,168,76,0.15);border-bottom:1px solid rgba(201,168,76,0.25)}
-  .c-band span{font-family:'Cinzel',serif;font-size:7px;letter-spacing:5px;text-transform:uppercase;color:rgba(201,168,76,0.5)}
-  .c-band.bot span{color:rgba(184,115,51,0.45)}
-  .c-corner{position:absolute;width:36px;height:36px;pointer-events:none}
-  .c-corner.tl{top:6px;left:6px} .c-corner.tr{top:6px;right:6px;transform:scaleX(-1)} .c-corner.bl{bottom:6px;left:6px;transform:scaleY(-1)} .c-corner.br{bottom:6px;right:6px;transform:scale(-1)}
-  .c-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center}
+/* ── HEADER ── */
+.hdr {
+  text-align:center; margin-bottom:5px; padding-bottom:5px;
+  position:relative; z-index:5;
+}
+.hdr::after {
+  content:''; position:absolute; left:6%; right:6%; bottom:0;
+  border-top:1px solid rgba(80,40,8,0.35);
+}
+.dtitle {
+  font-family:'Cinzel Decorative',serif; font-size:12.5px; font-weight:700;
+  color:#2a1204; letter-spacing:2px; text-transform:uppercase;
+  text-shadow:0 1px 0 rgba(255,220,150,0.2);
+}
+.dsub {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:9px; color:#5a3015; margin-top:1px; opacity:.8;
+}
+.dglyph {
+  font-family:'Cinzel',serif; font-size:8.5px; color:#7a4818;
+  opacity:.55; letter-spacing:5px; margin-top:2px;
+}
+.inc {
+  font-family:'Italianno',cursive; font-size:15px;
+  color:#5a2808; text-align:center; margin-top:4px;
+  letter-spacing:.3px; opacity:.8;
+  border-top:1px solid rgba(80,40,8,0.25);
+  border-bottom:1px solid rgba(80,40,8,0.25);
+  padding:2px 0;
+}
 
-  @keyframes pulse-gold {
-    0%,100%{filter:drop-shadow(0 0 18px rgba(201,168,76,0.3));opacity:.88}
-    50%{filter:drop-shadow(0 0 32px rgba(201,168,76,0.65));opacity:1}
-  }
-  @keyframes hint-bob {
-    0%,100%{opacity:.3;transform:translateY(0)}
-    50%{opacity:.55;transform:translateY(3px)}
-  }
+/* ── BADGE ── */
+.bc { text-align:center; position:relative; z-index:5; }
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-family:'Cinzel',serif; font-size:7.5px; letter-spacing:2px;
+  text-transform:uppercase; color:#3a1a06;
+  padding:2px 14px; margin-bottom:3px;
+  border:1px solid rgba(80,40,10,0.4);
+  background:rgba(180,120,40,0.12);
+}
+.badge::before,.badge::after { content:'✦'; font-size:5px; opacity:.5; }
 
-  /* ── refinements ── */
-  .day-hdr{border-bottom:none;position:relative;padding-bottom:7px;margin-bottom:7px}
-  .day-hdr::after{content:'';position:absolute;left:18%;right:18%;bottom:0;height:0;
-     border-top:1px solid var(--parchment-shadow);box-shadow:0 2px 0 -1px rgba(192,150,60,0.35)}
-  .day-title{text-shadow:0 1px 0 rgba(255,250,230,0.4)}
-  .day-glyph{font-family:'Cinzel',serif;font-size:8px;color:var(--copper);opacity:.5;letter-spacing:4px;margin-top:2px}
-  .badge{border:1px solid rgba(201,168,76,0.35);box-shadow:0 1px 2px rgba(0,0,0,0.18)}
-  .ri.led{background:linear-gradient(90deg,rgba(184,115,51,0.12),rgba(184,115,51,0));box-shadow:inset 2px 0 0 rgba(184,115,51,0.55);padding-left:3px}
-  .isprati{display:flex;align-items:center;gap:6px;margin:4px 2px 3px;opacity:.7}
-  .isprati::before,.isprati::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,var(--parchment-shadow),transparent)}
-  .isprati span{font-family:'Cinzel',serif;font-size:6.5px;letter-spacing:2px;color:var(--emerald);text-transform:uppercase;white-space:nowrap}
-  .colophon{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px}
-  .colophon .seal{font-size:34px;filter:drop-shadow(0 0 10px rgba(184,115,51,0.5))}
-  .colophon .fin{font-family:'Cinzel Decorative',serif;font-size:14px;color:var(--blood);letter-spacing:4px;text-transform:uppercase}
-  .colophon .verse{font-family:'IM Fell English',serif;font-style:italic;font-size:9px;color:var(--smoke);opacity:.7;line-height:1.7;max-width:78%}
-  .colophon .rule{width:60%;height:1px;background:linear-gradient(to right,transparent,var(--parchment-shadow),transparent)}
-  /* row layout: table (robust + fits 17 steps) */
-  .rlist{width:100%}
-  .ri{display:table;width:100%;table-layout:fixed;padding:0;border-bottom:1px dashed rgba(139,107,50,0.18)}
-  .ri:last-child{border-bottom:none}
-  .ri>span{display:table-cell;vertical-align:top;padding:1.3px 4px 1.3px 0}
-  .ri-ico{width:15px;font-size:8px}
-  .ri-name{width:42%;font-size:8px;line-height:1.14;font-weight:bold}
-  .ri-note{font-size:7px;line-height:1.17}
-  .pg{padding:13px 14px 10px}
-  .day-hdr{margin-bottom:5px;padding-bottom:5px}
-  .day-glyph{margin-top:1px}
-  .badge{margin-bottom:3px}
-  .ri.led{padding-left:3px}
+.wbar {
+  background:rgba(140,60,10,0.1); border:1px dashed rgba(140,70,15,0.4);
+  padding:3px 8px; margin-bottom:4px;
+  font-family:'Cormorant Garamond',serif; font-style:italic; font-size:8.5px;
+  color:#7a2e08; text-align:center; line-height:1.35;
+  position:relative; z-index:5;
+}
 
-  /* v4 mobile full-screen book fit */
-  html, body {
-    min-height: 100%;
-    overscroll-behavior: none;
-  }
+/* ── HERB DIVIDER ── */
+.hdiv {
+  display:flex; align-items:center; gap:5px;
+  margin:3px 0 4px; opacity:.5;
+  position:relative; z-index:5;
+}
+.hdiv::before,.hdiv::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(to right,transparent,rgba(90,50,10,0.5),transparent);
+}
 
-  @media (max-width: 900px) {
-    html, body {
-      width: 100vw;
-      height: 100svh;
-      height: 100dvh;
-      overflow: hidden;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #080200;
-    }
+/* ── RITUAL LIST ── */
+.rlist {
+  list-style:none; width:100%;
+  position:relative; z-index:5;
+}
+.ri {
+  display:flex; align-items:baseline;
+  border-bottom:1px solid rgba(80,45,8,0.2);
+  padding:2.8px 0;
+}
+.ri:last-child { border-bottom:none; }
+.ri.led {
+  background:linear-gradient(90deg,rgba(120,80,20,0.1),transparent);
+  box-shadow:inset 2.5px 0 0 rgba(130,80,20,0.4);
+  padding-left:3px;
+}
+.ri-i {
+  flex-shrink:0; width:17px; font-size:9.5px;
+  filter:saturate(.6) brightness(.75);
+}
+.ri-n {
+  flex:0 0 auto; width:46%;
+  font-family:'Cormorant Garamond',serif; font-size:9.5px;
+  color:#1a0c04; font-weight:700; line-height:1.22;
+  padding-right:5px;
+}
+.ri-t {
+  flex:1;
+  font-family:'Cormorant Garamond',serif; font-style:italic; font-size:8.5px;
+  color:#3d2008; opacity:.88; line-height:1.22;
+}
+.rw { color:#8a2e08; font-style:normal; font-weight:700; opacity:1; }
 
-    #book {
-      width: 100vw;
-      height: 100svh;
-      height: 100dvh;
-      min-height: 0;
-      max-width: none;
-      max-height: none;
-      transform: none;
-      transform-origin: center center;
-      filter: drop-shadow(0 14px 28px rgba(0,0,0,0.92));
-    }
+.ispr {
+  display:flex; align-items:center; gap:6px;
+  padding:3px 0; border-bottom:1px solid rgba(80,45,8,0.2);
+  position:relative; z-index:5;
+}
+.ispr::before,.ispr::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(to right,transparent,rgba(60,80,30,0.45),transparent);
+}
+.ispr span {
+  font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:2px;
+  color:#3d5018; text-transform:uppercase; white-space:nowrap;
+}
 
-    .spine {
-      left: 0;
-      width: 10px;
-      opacity: .55;
-      z-index: 20;
-    }
+/* ═══════════════════════════════════
+   COVER — dark leather
+═══════════════════════════════════ */
+#cover { border-radius:0 3px 3px 0; overflow:hidden; }
+.cover-full {
+  width:100%; height:100%; position:relative;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  background-color:#0e0c06;
+  background-image:
+    radial-gradient(ellipse at 8%  8%,  rgba(0,0,0,0.85) 0%, transparent 40%),
+    radial-gradient(ellipse at 92% 8%,  rgba(0,0,0,0.8)  0%, transparent 38%),
+    radial-gradient(ellipse at 8%  92%, rgba(0,0,0,0.8)  0%, transparent 38%),
+    radial-gradient(ellipse at 92% 92%, rgba(0,0,0,0.85) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, #181408 0%, #070602 100%);
+}
+/* leather crack texture */
+.cover-full::before {
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:.28;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02 0.04' numOctaves='5' seed='8'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23t)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.cf1{position:absolute;inset:10px;border:1px solid #2e2208;pointer-events:none;}
+.cf2{position:absolute;inset:16px;border:1px solid rgba(80,58,14,0.16);pointer-events:none;}
+.cband{
+  position:absolute;left:28px;right:28px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  border-top:1px solid rgba(80,60,14,0.2);border-bottom:1px solid rgba(80,60,14,0.12);
+  background:rgba(4,4,2,0.5);
+}
+.cband.t{top:26px}.cband.b{bottom:26px}
+.cband span{font-family:'Cinzel',serif;font-size:6px;letter-spacing:5px;text-transform:uppercase;color:rgba(130,100,35,0.35);}
+.cc{position:absolute;width:28px;height:28px;pointer-events:none;}
+.cc.tl{top:3px;left:3px}.cc.tr{top:3px;right:3px;transform:scaleX(-1)}
+.cc.bl{bottom:3px;left:3px;transform:scaleY(-1)}.cc.br{bottom:3px;right:3px;transform:scale(-1)}
+.cin{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.ccurse{
+  font-family:'Italianno',cursive;font-size:15px;
+  color:rgba(165,128,55,0.35);letter-spacing:.3px;
+  margin-top:12px;padding:3px 0;width:85%;text-align:center;
+  border-top:1px solid rgba(70,55,14,0.22);border-bottom:1px solid rgba(70,55,14,0.22);
+}
 
-    .spine-text {
-      display: none;
-    }
+/* ── COLOPHON ── */
+.colophon{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:14px;position:relative;z-index:5;}
+.fin{font-family:'Cinzel Decorative',serif;font-size:14px;color:#2a1204;letter-spacing:6px;text-transform:uppercase;}
+.verse{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:#4a2a10;opacity:.8;line-height:1.85;}
+.rule{width:44%;height:1px;background:linear-gradient(to right,transparent,rgba(80,45,10,0.45),transparent);}
+.fincurses{font-family:'Italianno',cursive;font-size:14px;color:#5a2808;opacity:.72;line-height:2.2;}
 
-    .click-prev,
-    .click-next {
-      width: 24vw;
-      height: 100svh;
-      height: 100dvh;
-      top: 0;
-    }
 
-    .pg {
-      height: 100%;
-      padding: 18px 13px 12px;
-    }
+/* Scrollable list container */
+.scroll-body {
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  flex:1;
+  min-height:0;
+  /* hide scrollbar but keep scroll */
+  scrollbar-width:none;
+}
+.scroll-body::-webkit-scrollbar { display:none; }
 
-    .day-title {
-      font-size: 10px;
-      letter-spacing: 1.1px;
-    }
+/* Page as flex column so list can scroll */
+.pg {
+  display:flex !important;
+  flex-direction:column;
+}
+.pg > .vign,
+.pg > .co,
+.pg > .pgn { flex-shrink:0; }
+.pg > .hdr  { flex-shrink:0; }
+.pg > .wbar { flex-shrink:0; }
+.pg > .bc   { flex-shrink:0; }
+.pg > .hdiv { flex-shrink:0; }
+.pg > .scroll-body { flex:1; min-height:0; }
 
-    .day-sub {
-      font-size: 7.4px;
-    }
+/* Colophon doesn't need scroll */
+.colophon-wrap { flex:1; display:flex; align-items:center; justify-content:center; }
 
-    .badge {
-      font-size: 6.7px;
-      padding: 2px 7px;
-      margin-bottom: 5px;
-    }
-
-    .ri > span {
-      padding: 1.8px 3px 1.8px 0;
-    }
-
-    .ri-ico {
-      width: 13px;
-      font-size: 7.2px;
-    }
-
-    .ri-name {
-      width: 43%;
-      font-size: 7.55px;
-      line-height: 1.12;
-    }
-
-    .ri-note {
-      font-size: 6.75px;
-      line-height: 1.15;
-    }
-
-    .pgnum {
-      bottom: 6px;
-    }
-
-    #flip-canvas {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  @media (max-width: 390px) {
-    .pg {
-      padding: 15px 10px 10px;
-    }
-
-    .ri-name {
-      font-size: 7.05px;
-    }
-
-    .ri-note {
-      font-size: 6.3px;
-    }
-
-    .day-title {
-      font-size: 9.4px;
-    }
-
-    .day-sub {
-      font-size: 7px;
-    }
-  }
-
+@keyframes bob{0%,100%{opacity:.28;transform:translateY(0)}50%{opacity:.48;transform:translateY(4px)}}
 </style>
 </head>
 <body>
-
-<div class="click-prev" id="z-prev" onclick="go(-1)" style="display:none"></div>
-<div class="click-next" id="z-next" onclick="go(1)"></div>
-
 <div id="book">
-  <div class="spine"><span class="spine-text">Grimoire · Eliksira Mladosti</span></div>
+  <div class="spine"><span class="spine-text">Codex Veneficae · Rituali Obnove</span></div>
   <canvas id="flip-canvas"></canvas>
+  <div class="click-prev" id="zp" onclick="go(-1)" style="display:none"></div>
+  <div class="click-next" id="zn" onclick="go(1)"></div>
 
-  <!-- ══════ KORICA ══════ -->
-  <div class="spread active" id="spread-cover" onclick="go(1)">
+  <!-- ══ KORICA ══ -->
+  <div class="spread active" id="cover" onclick="go(1)">
     <div class="cover-full">
-      <div class="c-frame1"></div><div class="c-frame2"></div><div class="c-frame3"></div>
-      <div class="c-band top"><span>Codex Secretus Alchimiae Cutis</span></div>
-      <div class="c-band bot"><span>Anno Domini · Perpetua Juventus</span></div>
-      <svg class="c-corner tl" viewBox="0 0 36 36"><path d="M2,2 L14,2 L2,14 Z" fill="none" stroke="#9a7530" stroke-width="1.5" opacity=".6"/><circle cx="8" cy="8" r="2.5" fill="none" stroke="#9a7530" stroke-width="1" opacity=".4"/><text x="8" y="12" text-anchor="middle" font-size="8" fill="#c9a84c" opacity=".55" font-family="serif">🜁</text></svg>
-      <svg class="c-corner tr" viewBox="0 0 36 36"><path d="M2,2 L14,2 L2,14 Z" fill="none" stroke="#9a7530" stroke-width="1.5" opacity=".6"/><circle cx="8" cy="8" r="2.5" fill="none" stroke="#9a7530" stroke-width="1" opacity=".4"/><text x="8" y="12" text-anchor="middle" font-size="8" fill="#c9a84c" opacity=".55" font-family="serif">🜂</text></svg>
-      <svg class="c-corner bl" viewBox="0 0 36 36"><path d="M2,2 L14,2 L2,14 Z" fill="none" stroke="#9a7530" stroke-width="1.5" opacity=".6"/><circle cx="8" cy="8" r="2.5" fill="none" stroke="#9a7530" stroke-width="1" opacity=".4"/><text x="8" y="12" text-anchor="middle" font-size="8" fill="#c9a84c" opacity=".55" font-family="serif">🜄</text></svg>
-      <svg class="c-corner br" viewBox="0 0 36 36"><path d="M2,2 L14,2 L2,14 Z" fill="none" stroke="#9a7530" stroke-width="1.5" opacity=".6"/><circle cx="8" cy="8" r="2.5" fill="none" stroke="#9a7530" stroke-width="1" opacity=".4"/><text x="8" y="12" text-anchor="middle" font-size="8" fill="#c9a84c" opacity=".55" font-family="serif">🜃</text></svg>
-      <div class="c-inner">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:175px;height:175px;margin-bottom:14px;animation:pulse-gold 5s ease-in-out infinite;">
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#6a4e18" stroke-width="1.5" opacity=".45"/>
-          <circle cx="100" cy="100" r="87" fill="none" stroke="#c9a84c" stroke-width=".5" opacity=".2"/>
-          <g stroke="#c9a84c" stroke-width="1" opacity=".3">
-            <line x1="100" y1="7" x2="100" y2="19"/><line x1="100" y1="181" x2="100" y2="193"/>
-            <line x1="7" y1="100" x2="19" y2="100"/><line x1="181" y1="100" x2="193" y2="100"/>
-            <line x1="34" y1="34" x2="43" y2="43"/><line x1="157" y1="34" x2="148" y2="43"/>
-            <line x1="34" y1="166" x2="43" y2="157"/><line x1="157" y1="166" x2="148" y2="157"/>
-          </g>
-          <polygon points="100,18 116,75 165,75 126,103 141,150 100,122 59,150 74,103 35,75 84,75" fill="none" stroke="#c9a84c" stroke-width=".9" opacity=".38"/>
-          <circle cx="100" cy="100" r="51" fill="none" stroke="#7a0000" stroke-width="1.5" opacity=".55"/>
-          <circle cx="100" cy="100" r="46" fill="none" stroke="#7a0000" stroke-width=".5" opacity=".25"/>
-          <path d="M100,49 C130,49 151,72 151,100 C151,128 130,151 100,151 C70,151 49,128 49,100 C49,72 70,49 100,49" fill="none" stroke="#b87333" stroke-width="2" stroke-dasharray="6,4" opacity=".65" stroke-linecap="round"/>
-          <circle cx="100" cy="49" r="3.5" fill="#b87333" opacity=".7"/>
-          <ellipse cx="100" cy="100" rx="18" ry="11" fill="rgba(122,0,0,0.07)" stroke="#c9a84c" stroke-width="1.5" opacity=".75"/>
-          <circle cx="100" cy="100" r="7" fill="rgba(122,0,0,0.5)" stroke="#7a0000" stroke-width="1" opacity=".9"/>
-          <circle cx="100" cy="100" r="3" fill="#c9a84c" opacity=".85"/>
-          <circle cx="102" cy="98" r="1" fill="rgba(255,255,255,0.3)"/>
-          <text x="100" y="42" text-anchor="middle" font-size="11" fill="#c9a84c" opacity=".6" font-family="serif">☿</text>
-          <text x="160" y="104" text-anchor="middle" font-size="11" fill="#c9a84c" opacity=".6" font-family="serif">♄</text>
-          <text x="40" y="104" text-anchor="middle" font-size="11" fill="#c9a84c" opacity=".6" font-family="serif">☽</text>
-          <text x="100" y="165" text-anchor="middle" font-size="11" fill="#c9a84c" opacity=".6" font-family="serif">☉</text>
+      <div class="cf1"></div><div class="cf2"></div>
+      <div class="cband t"><span>Arcana Cutis · Veneficia Moderna</span></div>
+      <div class="cband b"><span>Herbae · Acida · Peptida · Ignis</span></div>
+      <svg class="cc tl" viewBox="0 0 28 28"><path d="M2,2 L13,2 M2,2 L2,13" fill="none" stroke="#4a3410" stroke-width="1.3" opacity=".5"/><circle cx="6" cy="6" r="2" fill="none" stroke="#4a3410" stroke-width=".7" opacity=".4"/></svg>
+      <svg class="cc tr" viewBox="0 0 28 28"><path d="M2,2 L13,2 M2,2 L2,13" fill="none" stroke="#4a3410" stroke-width="1.3" opacity=".5"/><circle cx="6" cy="6" r="2" fill="none" stroke="#4a3410" stroke-width=".7" opacity=".4"/></svg>
+      <svg class="cc bl" viewBox="0 0 28 28"><path d="M2,2 L13,2 M2,2 L2,13" fill="none" stroke="#4a3410" stroke-width="1.3" opacity=".5"/><circle cx="6" cy="6" r="2" fill="none" stroke="#4a3410" stroke-width=".7" opacity=".4"/></svg>
+      <svg class="cc br" viewBox="0 0 28 28"><path d="M2,2 L13,2 M2,2 L2,13" fill="none" stroke="#4a3410" stroke-width="1.3" opacity=".5"/><circle cx="6" cy="6" r="2" fill="none" stroke="#4a3410" stroke-width=".7" opacity=".4"/></svg>
+
+      <div class="cin">
+        <!-- botanical side branches -->
+        <svg style="position:absolute;left:12px;top:50%;transform:translateY(-52%);width:38px;height:52%;opacity:.3" viewBox="0 0 38 200">
+          <path d="M19,198 Q16,155 20,118 Q24,83 18,50 Q12,22 19,6" fill="none" stroke="#4a3c14" stroke-width="1.3"/>
+          <path d="M19,158 Q4,150 1,133" fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="0" cy="131" rx="5" ry="3" fill="#2e3e10" opacity=".7" transform="rotate(-22,0,131)"/>
+          <path d="M19,126 Q34,118 37,100" fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="37" cy="98" rx="5" ry="3" fill="#2e3e10" opacity=".7" transform="rotate(18,37,98)"/>
+          <path d="M19,94  Q3,86  0,68"  fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="0" cy="66"  rx="4.5" ry="2.5" fill="#2e3e10" opacity=".6" transform="rotate(-25,0,66)"/>
+          <path d="M19,63  Q35,54 37,37"  fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="37" cy="35" rx="4.5" ry="2.5" fill="#2e3e10" opacity=".6" transform="rotate(20,37,35)"/>
         </svg>
-        <div style="font-family:'Cinzel Decorative',serif;font-size:38px;font-weight:900;color:#e8c96a;letter-spacing:4px;text-shadow:0 0 40px rgba(201,168,76,0.4),0 2px 6px rgba(0,0,0,0.95);line-height:1;">Grimoire</div>
-        <div style="display:flex;align-items:center;gap:10px;width:340px;margin:8px 0;">
-          <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.55));"></div>
-          <span style="color:#b87333;font-size:17px;filter:drop-shadow(0 0 8px rgba(184,115,51,0.5));">🐍</span>
-          <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,rgba(201,168,76,0.55));"></div>
+        <svg style="position:absolute;right:12px;top:50%;transform:translateY(-52%) scaleX(-1);width:38px;height:52%;opacity:.3" viewBox="0 0 38 200">
+          <path d="M19,198 Q16,155 20,118 Q24,83 18,50 Q12,22 19,6" fill="none" stroke="#4a3c14" stroke-width="1.3"/>
+          <path d="M19,158 Q4,150 1,133" fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="0" cy="131" rx="5" ry="3" fill="#2e3e10" opacity=".7" transform="rotate(-22,0,131)"/>
+          <path d="M19,126 Q34,118 37,100" fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="37" cy="98" rx="5" ry="3" fill="#2e3e10" opacity=".7" transform="rotate(18,37,98)"/>
+          <path d="M19,94  Q3,86  0,68"  fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="0" cy="66"  rx="4.5" ry="2.5" fill="#2e3e10" opacity=".6" transform="rotate(-25,0,66)"/>
+          <path d="M19,63  Q35,54 37,37"  fill="none" stroke="#3a4814" stroke-width=".9"/><ellipse cx="37" cy="35" rx="4.5" ry="2.5" fill="#2e3e10" opacity=".6" transform="rotate(20,37,35)"/>
+        </svg>
+
+        <!-- wax seal -->
+        <svg viewBox="0 0 100 100" style="width:96px;height:96px;margin-bottom:14px;filter:drop-shadow(0 5px 16px rgba(0,0,0,0.98))">
+          <ellipse cx="50" cy="92" rx="28" ry="8" fill="#100600" opacity=".55"/>
+          <path d="M22,50 Q19,66 25,80 Q32,92 50,95 Q68,92 75,80 Q81,66 78,50 Q81,34 75,20 Q66,6 50,3 Q34,6 25,20 Q19,34 22,50Z" fill="#1a0a04"/>
+          <path d="M25,50 Q23,65 28,78 Q35,90 50,93 Q65,90 72,78 Q77,65 75,50 Q77,35 72,22 Q63,9 50,6 Q37,9 28,22 Q23,35 25,50Z" fill="#220e06"/>
+          <circle cx="50" cy="50" r="26" fill="none" stroke="#321406" stroke-width="1.3" opacity=".6"/>
+          <circle cx="50" cy="50" r="19" fill="none" stroke="#281004" stroke-width=".8" opacity=".35" stroke-dasharray="2.5,2.5"/>
+          <path d="M37,36 C27,42 26,55 35,63 C24,59 19,46 25,36 C30,28 40,24 46,29 C42,31 37,34 37,36Z" fill="#0e0502" stroke="#3e1c0a" stroke-width=".9" opacity=".85"/>
+          <line x1="50" y1="25" x2="50" y2="75" stroke="#221004" stroke-width=".8" opacity=".4"/>
+          <line x1="24" y1="50" x2="76" y2="50" stroke="#221004" stroke-width=".8" opacity=".4"/>
+          <path d="M50,36 L50,64 M46,42 L50,36 L54,42 M43,54 L50,48 L57,54" fill="none" stroke="#384814" stroke-width="1.1" opacity=".65"/>
+          <circle cx="50" cy="50" r="4.5" fill="none" stroke="#4a2a0c" stroke-width=".8" opacity=".5"/>
+          <circle cx="50" cy="50" r="1.8" fill="#583810" opacity=".4"/>
+        </svg>
+
+        <div style="font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:7px;color:#6a4c18;text-transform:uppercase;margin-bottom:3px;opacity:.6;">Codex</div>
+        <div style="font-family:'Cinzel Decorative',serif;font-size:27px;font-weight:900;color:#c0903a;letter-spacing:3px;text-shadow:0 2px 18px rgba(0,0,0,0.98);line-height:1.05;">Veneficae</div>
+
+        <div style="display:flex;align-items:center;gap:7px;width:75%;margin:8px 0 6px;">
+          <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#3a2c0e);"></div>
+          <svg width="10" height="10" viewBox="0 0 10 10" opacity=".4"><path d="M5,.7 L6,3.5 L9,3.5 L6.8,5.4 L7.8,8.3 L5,6.5 L2.2,8.3 L3.2,5.4 L1,3.5 L4,3.5Z" fill="none" stroke="#4e3812" stroke-width=".9"/></svg>
+          <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#3a2c0e);"></div>
         </div>
-        <div style="font-family:'Cinzel Decorative',serif;font-size:12.5px;color:#8b1a1a;letter-spacing:3px;text-shadow:0 0 18px rgba(139,0,0,0.5);text-transform:uppercase;margin-bottom:12px;">Eliksira Večne Mladosti</div>
-        <p style="font-family:'IM Fell English',serif;font-style:italic;font-size:11px;color:rgba(240,224,180,0.42);line-height:1.85;letter-spacing:.4px;">Sveta knjiga rituala obnove — zmijski otrovi,<br>bakreni peptidi, kiselinska alhemija<br>i eliksiri besmrtne kože.</p>
-        <div style="margin-top:20px;animation:hint-bob 3s ease-in-out infinite;">
-          <span style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:5px;color:#c9a84c;text-transform:uppercase;opacity:.38;">✦ &nbsp; Otvori &nbsp; ✦</span>
+
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:9.5px;color:rgba(200,165,90,0.35);line-height:2;letter-spacing:.3px;">Knjiga tajnih rituala obnove —<br>bakreni peptidi, kiseline i eliksiri,<br>mesecom mereni i noću primenjeni.</p>
+
+        <div class="ccurse">Cutis mea, renovare. Tempus, recede.</div>
+
+        <div style="margin-top:13px;animation:bob 3.5s ease-in-out infinite;">
+          <span style="font-family:'Cinzel',serif;font-size:6.5px;letter-spacing:6px;color:#6a4c18;text-transform:uppercase;opacity:.35;">✦ &nbsp; Otvori &nbsp; ✦</span>
         </div>
       </div>
-      <svg style="position:absolute;bottom:58px;right:48px;width:60px;height:60px;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.85));" viewBox="0 0 60 60">
-        <circle cx="30" cy="30" r="28" fill="#550000"/>
-        <circle cx="30" cy="30" r="24" fill="#6a0000"/>
-        <circle cx="30" cy="30" r="22" fill="none" stroke="#8b2020" stroke-width="1" opacity=".55"/>
-        <text x="30" y="37" text-anchor="middle" font-size="22" fill="#c9a84c" opacity=".7" font-family="serif">🐍</text>
-      </svg>
     </div>
   </div>
 
-  
-  
-  <!-- ══════ 🌿  PONEDELJAK ══════ -->
-  <div class="spread" id="d0">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">🜁</span>
-      <div class="day-hdr">
-        <div class="day-title">🌿  Ponedeljak</div>
-        <div class="day-sub">Peptidi + Copper Peptide + Sleep maska</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="am1">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">🌿  Ponedeljak</div>
+        <div class="dsub">Peptidi + Copper Peptide</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Peptida mea, penetra. Collagena, resurge.</div>
       </div>
-      
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa AZID.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">AZID 15% (Theramid)</span><span class="ri-note">Azelaic acid + Carnosine + Ceramidi — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">II</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">🜁</span>
-      <div class="day-hdr">
-        <div class="day-title">🌿  Ponedeljak</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa AZID.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">AZID 15% (Theramid)</span><span class="ri-t">Azelaic + Carnosine + Ceramidi. ⏱ 30 sek pa ANUA.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE · Red Bean Piling</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F5 (Duboka crvena)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. Crveno + NIR + duboki NIR: kolagen + zatezanje.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa COSRX Peptide Booster.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">COSRX The 6 Peptide Skin Booster Serum</span><span class="ri-note">pH buffer pre Cu peptida — odmah posle Hada Labo. ⏱ Sačekati 5-10 min pa Cu peptid.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Copper Peptide 3% (Theramid)</span><span class="ri-note">⚠️ <span class="ri-warn">BEZ kiselina / retinoida iste noći!</span> ⏱ Sačekati 2-3 min pa sledeći korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Revive Serum: Ginseng + Snail</span><span class="ri-note">snail + ginseng — odmah posle Cu peptida.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Laneige Water Sleeping Mask</span><span class="ri-note">🌙 sleep maska — Pon + Sre, zadnji korak. Nanosi odmah.</span></li>
-        </ul>
-      <span class="pgnum">III</span>
+      <div class="pgn">· I ·</div>
     </div>
   </div>
 
-  <!-- ══════ ✨  UTORAK ══════ -->
-  <div class="spread" id="d1">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">☿</span>
-      <div class="day-hdr">
-        <div class="day-title">✨  Utorak</div>
-        <div class="day-sub">Retinol noć</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="pm2">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">🌿  Ponedeljak</div>
+        <div class="dsub">Nox Peptidorum</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Cuprum vivificat. Senectus fugiat.</div>
       </div>
-      
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa Even In.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Even In (Theramid)</span><span class="ri-note">TXA + Kojic + Mandelic — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA. ⚠️ OBAVEZAN SPF!</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">IV</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">☿</span>
-      <div class="day-hdr">
-        <div class="day-title">✨  Utorak</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F5 (Duboka crvena)</span><span class="ri-t">⏰ 10 min PRE nege. Crveno + NIR: kolagen + zatezanje.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa COSRX Peptide Booster.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">COSRX The 6 Peptide Skin Booster Serum</span><span class="ri-t">pH buffer pre Cu peptida. ⏱ 5-10 min pa Copper Peptide.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Copper Peptide 3% (Theramid)</span><span class="ri-t"><span class="rw">⚠️ BEZ kiselina</span> / retinoida iste noći! ⏱ 2-3 min.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Revive Serum: Ginseng + Snail</span><span class="ri-t">snail + ginseng — odmah posle Cu peptida.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Laneige Water Sleeping Mask</span><span class="ri-t">🌙 sleep maska — Pon + Sre, poslednji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F1 (Crveno)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. Crveno svetlo: kolagen, regeneracija i svežiji ton kože.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa retinoid.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Clinical Vitamin A (Theramid)</span><span class="ri-note">0.3% Retinol + 0.1% Retinal — <span class="ri-warn">LICE SAMO</span>. ⏱ Sačekati 15 min pa nastavi (oči + Dynasty krema).</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Revive Eye Serum</span><span class="ri-note">retinal + ginseng — VEČE oko očiju, PRE eye kreme. Odmah posle retinoida.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-note">oko očiju — centella okluzija posle retinal seruma. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Buffer posle retinoida. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Mary &amp; May Calendula Peptide Ageless Sleeping Mask</span><span class="ri-note">🌙 sleep maska — Uto + Čet + Sub (retinol noći). Calendula + 25 peptida. Zadnji korak.</span></li>
-        </ul>
-      <span class="pgnum">V</span>
+      <div class="pgn">· II ·</div>
     </div>
   </div>
 
-  <!-- ══════ 💧  SREDA ══════ -->
-  <div class="spread" id="d2">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">🜃</span>
-      <div class="day-hdr">
-        <div class="day-title">💧  Sreda</div>
-        <div class="day-sub">Peptidi + Copper Peptide + Sleep maska</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="am3">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">✨  Utorak</div>
+        <div class="dsub">Retinol noć</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Lux mea venit. Macula, evanescere.</div>
       </div>
-      
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa AZID.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">AZID 15% (Theramid)</span><span class="ri-note">Azelaic acid + Carnosine + Ceramidi — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">VI</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">🜃</span>
-      <div class="day-hdr">
-        <div class="day-title">💧  Sreda</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa Even In.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Even In (Theramid)</span><span class="ri-t">TXA + Kojic + Mandelic. ⏱ 30 sek pa ANUA. ⚠️ <span class="rw">OBAVEZAN SPF</span>!</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F4 (NIR)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. NIR + duboki NIR: dublji kolagen + elastin.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa COSRX Peptide Booster.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">COSRX The 6 Peptide Skin Booster Serum</span><span class="ri-note">pH buffer pre Cu peptida — odmah posle Hada Labo. ⏱ Sačekati 5-10 min pa Cu peptid.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Copper Peptide 3% (Theramid)</span><span class="ri-note">⚠️ <span class="ri-warn">BEZ kiselina / retinoida iste noći!</span> ⏱ Sačekati 2-3 min pa sledeći korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Revive Serum: Ginseng + Snail</span><span class="ri-note">snail + ginseng — odmah posle Cu peptida.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Laneige Water Sleeping Mask</span><span class="ri-note">🌙 sleep maska — Pon + Sre, zadnji korak. Nanosi odmah.</span></li>
-        </ul>
-      <span class="pgnum">VII</span>
+      <div class="pgn">· III ·</div>
     </div>
   </div>
 
-  <!-- ══════ 🌟  ČETVRTAK ══════ -->
-  <div class="spread" id="d3">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">🜂</span>
-      <div class="day-hdr">
-        <div class="day-title">🌟  Četvrtak</div>
-        <div class="day-sub">Retinol noć</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="pm4">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">✨  Utorak</div>
+        <div class="dsub">Nox Retinoidi</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Retinol, tempus vince. Cutis, iuvenescere.</div>
       </div>
-      
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa Even In.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Even In (Theramid)</span><span class="ri-note">TXA + Kojic + Mandelic — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA. ⚠️ OBAVEZAN SPF!</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">VIII</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">🜂</span>
-      <div class="day-hdr">
-        <div class="day-title">🌟  Četvrtak</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F1 (Crveno)</span><span class="ri-t">⏰ 10 min PRE nege. Crveno: kolagen, regeneracija.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa retinoid.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Clinical Vitamin A (Theramid)</span><span class="ri-t">0.3% Retinol + 0.1% Retinal — <span class="rw">LICE SAMO</span>. ⏱ 15 min.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Revive Eye Serum</span><span class="ri-t">retinal + ginseng — VEČE oko očiju, PRE eye kreme.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija posle retinal seruma.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng. Buffer.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Mary &amp; May Calendula Peptide Ageless Sleeping Mask</span><span class="ri-t">🌙 sleep maska — Uto+Čet+Sub. Poslednji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F7 (Tamnonarandžasta)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. Ćilibar + crveno + NIR: zatezanje + ten + smiruje crvenilo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa retinoid.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Clinical Vitamin A (Theramid)</span><span class="ri-note">0.3% Retinol + 0.1% Retinal — <span class="ri-warn">LICE SAMO</span>. ⏱ Sačekati 15 min pa nastavi (oči + Dynasty krema).</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Revive Eye Serum</span><span class="ri-note">retinal + ginseng — VEČE oko očiju, PRE eye kreme. Odmah posle retinoida.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-note">oko očiju — centella okluzija posle retinal seruma. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Buffer posle retinoida. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Mary &amp; May Calendula Peptide Ageless Sleeping Mask</span><span class="ri-note">🌙 sleep maska — Uto + Čet + Sub (retinol noći). Calendula + 25 peptida. Zadnji korak.</span></li>
-        </ul>
-      <span class="pgnum">IX</span>
+      <div class="pgn">· IV ·</div>
     </div>
   </div>
 
-  <!-- ══════ ⚡  PETAK ══════ -->
-  <div class="spread" id="d4">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">🜄</span>
-      <div class="day-hdr">
-        <div class="day-title">⚡  Petak</div>
-        <div class="day-sub">Peptidi + Copper Peptide + Sleep maska</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="am5">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">💧  Sreda</div>
+        <div class="dsub">Peptidi + Copper Peptide</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Ignis azelaic, poros munda.</div>
       </div>
-      
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa AZID.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">AZID 15% (Theramid)</span><span class="ri-note">Azelaic acid + Carnosine + Ceramidi — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">X</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">🜄</span>
-      <div class="day-hdr">
-        <div class="day-title">⚡  Petak</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa AZID.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">AZID 15% (Theramid)</span><span class="ri-t">Azelaic + Carnosine + Ceramidi. ⏱ 30 sek pa ANUA.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F5 (Duboka crvena)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. Crveno + NIR + duboki NIR: kolagen + zatezanje.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa COSRX Peptide Booster.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">COSRX The 6 Peptide Skin Booster Serum</span><span class="ri-note">pH buffer pre Cu peptida — odmah posle Hada Labo. ⏱ Sačekati 5-10 min pa Cu peptid.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Copper Peptide 3% (Theramid)</span><span class="ri-note">⚠️ <span class="ri-warn">BEZ kiselina / retinoida iste noći!</span> ⏱ Sačekati 2-3 min pa sledeći korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Revive Serum: Ginseng + Snail</span><span class="ri-note">snail + ginseng — odmah posle Cu peptida.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Laneige Bouncy &amp; Firm Sleeping Mask</span><span class="ri-note">🌙 sleep maska — Petak. Peptidi + kolagen + adenozin, lifting posle Copper Peptide. Zadnji korak.</span></li>
-        </ul>
-      <span class="pgnum">XI</span>
+      <div class="pgn">· V ·</div>
     </div>
   </div>
 
-  <!-- ══════ 🌸  SUBOTA ══════ -->
-  <div class="spread" id="d5">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">✦</span>
-      <div class="day-hdr">
-        <div class="day-title">🌸  Subota</div>
-        <div class="day-sub">Retinol noć</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="pm6">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">💧  Sreda</div>
+        <div class="dsub">Nox Peptidorum</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Peptida, firmate. Rugae, dissolvantur.</div>
       </div>
-      
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa Even In.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Even In (Theramid)</span><span class="ri-note">TXA + Kojic + Mandelic — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA. ⚠️ OBAVEZAN SPF!</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">XII</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">✦</span>
-      <div class="day-hdr">
-        <div class="day-title">🌸  Subota</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F4 (NIR)</span><span class="ri-t">⏰ 10 min PRE nege. NIR + duboki NIR: kolagen + elastin.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa COSRX Peptide Booster.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">COSRX The 6 Peptide Skin Booster Serum</span><span class="ri-t">pH buffer pre Cu peptida. ⏱ 5-10 min pa Copper Peptide.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Copper Peptide 3% (Theramid)</span><span class="ri-t"><span class="rw">⚠️ BEZ kiselina</span> / retinoida iste noći! ⏱ 2-3 min.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Revive Serum: Ginseng + Snail</span><span class="ri-t">snail + ginseng — odmah posle Cu peptida.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Laneige Water Sleeping Mask</span><span class="ri-t">🌙 sleep maska — Pon+Sre, poslednji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F3 (Ćilibar)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. Ćilibar: hidratacija, smirivanje i ujednačavanje tena.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa retinoid.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Clinical Vitamin A (Theramid)</span><span class="ri-note">0.3% Retinol + 0.1% Retinal — <span class="ri-warn">LICE SAMO</span>. ⏱ Sačekati 15 min pa nastavi (oči + Dynasty krema).</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Revive Eye Serum</span><span class="ri-note">retinal + ginseng — VEČE oko očiju, PRE eye kreme. Odmah posle retinoida.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-note">oko očiju — centella okluzija posle retinal seruma. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Buffer posle retinoida. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Mary &amp; May Calendula Peptide Ageless Sleeping Mask</span><span class="ri-note">🌙 sleep maska — Uto + Čet + Sub (retinol noći). Calendula + 25 peptida. Zadnji korak.</span></li>
-        </ul>
-      <span class="pgnum">XIII</span>
+      <div class="pgn">· VI ·</div>
     </div>
   </div>
 
-  <!-- ══════ 🔥  NEDELJA ══════ -->
-  <div class="spread" id="d6">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">☉</span>
-      <div class="day-hdr">
-        <div class="day-title">🔥  Nedelja</div>
-        <div class="day-sub">Eksfolijacija + Red Bean Piling</div>
-        <div class="day-glyph">☉ ☽</div>
+  <div class="spread" id="am7">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">🌟  Četvrtak</div>
+        <div class="dsub">Retinol noć</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Acidum mandat. Cutis obedit.</div>
       </div>
-      <div class="warn-bar">⚠️  Veče: Red Bean rinse-off (bez aktiva uveče) — aktivi kompenzovani ujutro: Vit C + AZID</div>
-      <div style="text-align:center"><span class="badge am">☀️ Jutarnji Ritual</span></div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-note">blago umivanje — low pH + BHA za pore</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F2 (Plavo svetlo)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE jutarnje nege. Plavo svetlo za čistoću kože i prevenciju nepravilnosti.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Tetramid C.E.F (Theramid)</span><span class="ri-note">Vit C + E + Ferulic — JUTRO. ⏱ Sačekati 30 sek pa AZID.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">AZID 15% (Theramid)</span><span class="ri-note">Azelaic acid + Carnosine + Ceramidi — odmah posle Vit C. ⏱ Sačekati 30 sek pa ANUA.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-note">10D HA — nanosi odmah. ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — JUTRO, lifting. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa aktivni serumi za lice.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">BACK IN TIME VIVADERM (SYN-AKE)</span><span class="ri-note">lice — samo kad izlazim napolje. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">ANTI AGE SERUM SERPENS DERM</span><span class="ri-note">lice — samo kod kuće. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-note">vaskularne podočnjake — TXA + glutation, jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">⚡ <span class="ri-warn">OBAVEZNO</span> zadnji korak — svako jutro. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">☀️</span><span class="ri-name">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-note">reaplikacija SPF tokom dana — preko šminke.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — zadnji jutarnji korak.</span></li>
-        </ul>
-      <span class="pgnum">XIV</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">☉</span>
-      <div class="day-hdr">
-        <div class="day-title">🔥  Nedelja</div>
-        <div class="day-sub">Nox · Ritual Obnove</div>
-        <div class="day-glyph">☽ ✦ ☾</div>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa Even In.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Even In (Theramid)</span><span class="ri-t">TXA + Kojic + Mandelic. ⏱ 30 sek pa ANUA. ⚠️ <span class="rw">OBAVEZAN SPF</span>!</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">🌙  VEČE · Red Bean Piling</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri led"><span class="ri-ico">💡</span><span class="ri-name">Silk&#x27;n LED Face Mask Pro — F6 (Ljubičasta)</span><span class="ri-note">⏰ 10 min na čisto, suvo lice — PRE nege. Plavo + crveno + NIR + duboki NIR: balans, anti-age i podrška problematičnoj koži.</span></li>
-        <li class="ri"><span class="ri-ico">🫘</span><span class="ri-name">Beauty of Joseon Red Bean Refreshing Pore Mask</span><span class="ri-note">⚠️ <span class="ri-warn">RINSE-OFF 10-15 min</span> — nanosi PRE rutine.</span></li>
-        <div class="isprati"><span>ISPRATI → nastavi rutinu</span></div>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa NAD esenciju.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-note">NAD+ + 50 peptida — lifting + obnova posle pilinga. ⏱ Sačekati 30 sek pa Glow Serum.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Glow Serum: Propolis + Niacinamide</span><span class="ri-note">umiruje + sjaj — nanosi odmah. Nema novih kiselina.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">La Roche-Posay Cicaplast Lèvres</span><span class="ri-note">regeneracija — VEČE. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        <li class="ri"><span class="ri-ico">🌙</span><span class="ri-name">Sulwhasoo Overnight Vitalizing Mask</span><span class="ri-note">🌙 sleep maska — Nedelja, zadnji korak. Nanosi odmah.</span></li>
-        </ul>
-      <span class="pgnum">XV</span>
+      <div class="pgn">· VII ·</div>
     </div>
   </div>
 
-  <!-- ══════ POSEBNE RUTINE 1 ══════ -->
-  <div class="spread" id="s0">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">🜔</span>
-      <div class="day-hdr">
-        <div class="day-title">🕒  MEĐURUTINA — kad dođem kući ranije (pre večernje)</div>
-        <div class="day-sub">Samo skidanje šminke i osnovna hidracija — bez aktiva. Aktivi dolaze uveče po rasporedu.</div>
-        <div class="day-glyph">✦ ☽ ✦</div>
+  <div class="spread" id="pm8">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">🌟  Četvrtak</div>
+        <div class="dsub">Nox Retinoidi</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Retinal ardet. Vetustas cedat.</div>
       </div>
-      <div style="text-align:center"><span class="badge am">Posebni Ritual</span></div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🕒</span><span class="ri-name">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-note">1. korak — oil cleanser, skida SPF i šminku.</span></li>
-        <li class="ri"><span class="ri-ico">🕒</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">2. korak double cleanse — low pH, čuva barijeru.</span></li>
-        <li class="ri"><span class="ri-ico">🕒</span><span class="ri-name">Pyunkang Yul Essence Toner</span><span class="ri-note">toner/esencija — nanosi odmah. ⏱ Sačekati 30 sek pa Hada Labo.</span></li>
-        <li class="ri"><span class="ri-ico">🕒</span><span class="ri-name">Hada Labo Super Hydrator Lotion</span><span class="ri-note">HA slojevi — ⏱ Sačekati 30 sek pa sledeći korak.</span></li>
-        <li class="ri"><span class="ri-ico">🕒</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🕒</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">DNEVNA KREMA — PDRN + ceramidi + kolagen. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Propanthen tegla</span><span class="ri-note">usne — osnovna nega.</span></li>
-        </ul>
-      <span class="pgnum">XVI</span>
-    </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">🜔</span>
-      <div class="day-hdr">
-        <div class="day-title">🌓  MEĐURUTINA ZA MEĐUDAN — kad ne spavam celu noć</div>
-        <div class="day-sub">Osnovno osvežavanje i hidracija — bez aktiva, bez kiselina.</div>
-        <div class="day-glyph">✦ ☽ ✦</div>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F7 (Tamno narandžasta)</span><span class="ri-t">⏰ 10 min PRE nege. Ćilibar + crveno + NIR: zatezanje.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa retinoid.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Clinical Vitamin A (Theramid)</span><span class="ri-t">0.3% Retinol + 0.1% Retinal — <span class="rw">LICE SAMO</span>. ⏱ 15 min.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Revive Eye Serum</span><span class="ri-t">retinal + ginseng — VEČE oko očiju, PRE eye kreme.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija posle retinal seruma.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng. Buffer.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Mary &amp; May Calendula Peptide Ageless Sleeping Mask</span><span class="ri-t">🌙 sleep maska — Uto+Čet+Sub. Poslednji korak.</span></li>
+      </ul>
       </div>
-      <div style="text-align:center"><span class="badge pm">Posebni Ritual</span></div>
-      <ul class="rlist">
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">Voda — ispiranje lica</span><span class="ri-note">samo mlaka voda, bez čistača</span></li>
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">lagani hidratantni toner — nanosi odmah</span></li>
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">Beauty of Joseon Glow Serum: Propolis + Niacinamide</span><span class="ri-note">umiruje + sjaj — nanosi odmah. Nema novih kiselina.</span></li>
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa krema.</span></li>
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — zmijski otrov. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">Beauty of Joseon Dynasty Cream</span><span class="ri-note">noćna krema — ceramidi + adenozin + ginseng. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">🌓</span><span class="ri-name">Medicube Pink Caffeine / Super Cica Turmeric Mask</span><span class="ri-note">🌓 Rotacija — zadnji korak, dok spavaš.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Lanolin</span><span class="ri-note">tanak sloj — zatvara i hrani. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy Original</span><span class="ri-note">vrh — seal, zadnji korak.</span></li>
-        </ul>
-      <span class="pgnum">XVII</span>
+      <div class="pgn">· VIII ·</div>
     </div>
   </div>
 
-  <!-- ══════ POSEBNE RUTINE 2 ══════ -->
+  <div class="spread" id="am9">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">⚡  Petak</div>
+        <div class="dsub">Peptidi + Copper Peptide</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Aurora venit. Cutis, fulge.</div>
+      </div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa AZID.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">AZID 15% (Theramid)</span><span class="ri-t">Azelaic + Carnosine + Ceramidi. ⏱ 30 sek pa ANUA.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· IX ·</div>
+    </div>
+  </div>
+
+  <div class="spread" id="pm10">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">⚡  Petak</div>
+        <div class="dsub">Nox Peptidorum</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Cuprum et collagena, vincite.</div>
+      </div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F5 (Duboka crvena)</span><span class="ri-t">⏰ 10 min PRE nege. Crveno + NIR: kolagen + zatezanje.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa COSRX Peptide Booster.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">COSRX The 6 Peptide Skin Booster Serum</span><span class="ri-t">pH buffer pre Cu peptida. ⏱ 5-10 min pa Copper Peptide.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Copper Peptide 3% (Theramid)</span><span class="ri-t"><span class="rw">⚠️ BEZ kiselina</span> / retinoida iste noći! ⏱ 2-3 min.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Revive Serum: Ginseng + Snail</span><span class="ri-t">snail + ginseng — odmah posle Cu peptida.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Laneige Bouncy &amp; Firm Sleeping Mask</span><span class="ri-t">🌙 sleep maska — Petak. Poslednji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· X ·</div>
+    </div>
+  </div>
+
+  <div class="spread" id="am11">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">🌸  Subota</div>
+        <div class="dsub">Retinol noć</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Solis lux, protege.</div>
+      </div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa Even In.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Even In (Theramid)</span><span class="ri-t">TXA + Kojic + Mandelic. ⏱ 30 sek pa ANUA. ⚠️ <span class="rw">OBAVEZAN SPF</span>!</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XI ·</div>
+    </div>
+  </div>
+
+  <div class="spread" id="pm12">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">🌸  Subota</div>
+        <div class="dsub">Nox Retinoidi</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Ultima nox. Cutis, renovatur.</div>
+      </div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F3 (Ćilibar)</span><span class="ri-t">⏰ 10 min PRE nege. Ćilibar: hidratacija, smirivanje.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa retinoid.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Clinical Vitamin A (Theramid)</span><span class="ri-t">0.3% Retinol + 0.1% Retinal — <span class="rw">LICE SAMO</span>. ⏱ 15 min.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Revive Eye Serum</span><span class="ri-t">retinal + ginseng — VEČE oko očiju, PRE eye kreme.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija posle retinal seruma.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng. Buffer.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Mary &amp; May Calendula Peptide Ageless Sleeping Mask</span><span class="ri-t">🌙 sleep maska — Uto+Čet+Sub. Poslednji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XII ·</div>
+    </div>
+  </div>
+
+  <div class="spread" id="am13">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span><span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="hdr">
+        <div class="dtitle">🔥  Nedelja</div>
+        <div class="dsub">Eksfolijacija + Red Bean</div>
+        <div class="dglyph">☉ ✦ ☽</div>
+        <div class="inc">Acidum purgat. Nova cutis nascitur.</div>
+      </div>
+      <div class="bc"><span class="badge am">☀️  Jutarnji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">COSRX Low pH Good Morning Gel Cleanser</span><span class="ri-t">blago umivanje — low pH + BHA za pore</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F2 (Plavo svetlo)</span><span class="ri-t">⏰ 10 min PRE nege, na čisto suvo lice.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Tetramid C.E.F (Theramid)</span><span class="ri-t">Vit C + E + Ferulic — JUTRO. ⏱ 30 sek pa AZID.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">AZID 15% (Theramid)</span><span class="ri-t">Azelaic + Carnosine + Ceramidi. ⏱ 30 sek pa ANUA.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Isntree Ultra-Low Molecular HA Serum</span><span class="ri-t">10D HA. ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — JUTRO. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa aktivni serumi.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Mary &amp; May TXA + Glutathione Eye Cream</span><span class="ri-t">vaskularne podočnjake — jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">⚡ <span class="rw">OBAVEZNO</span> poslednji korak — svako jutro.</span></li>
+      <li class="ri"><span class="ri-i">☀️</span><span class="ri-n">La Roche-Posay Anthelios Invisible Mist SPF50</span><span class="ri-t">reaplikacija tokom dana — preko šminke.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji jutarnji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XIII ·</div>
+    </div>
+  </div>
+
+  <div class="spread" id="pm14">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☾</span><span class="co tr">☽</span><span class="co bl">☽</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">🔥  Nedelja</div>
+        <div class="dsub">Nox Exfoliationis</div>
+        <div class="dglyph">☽ ✦ ☾</div>
+        <div class="inc">Exfoliatio completa. Iuventus redit.</div>
+      </div>
+      <div class="wbar">⚠️ Veče: Red Bean rinse-off — aktivi kompenzovani ujutro: Vit C + AZID</div>
+      <div class="bc"><span class="badge pm">🌙  Večernji Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri led"><span class="ri-i">💡</span><span class="ri-n">Silk&#x27;n LED — F6 (Ljubičasta)</span><span class="ri-t">⏰ 10 min PRE nege. Plavo+crveno+NIR: balans, anti-age.</span></li>
+      <li class="ri"><span class="ri-i">🫘</span><span class="ri-n">Beauty of Joseon Red Bean Refreshing Pore Mask</span><span class="ri-t"><span class="rw">⚠️ RINSE-OFF</span> 10-15 min — PRE rutine.</span></li>
+      <li class="ispr"><span>✦ isprati → nastavi ✦</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa NAD.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Numbuzin No.9 NAD Bio Lifting Esencija</span><span class="ri-t">NAD+ + 50 peptida — obnova posle pilinga.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Glow Serum: Propolis + Niacinamide</span><span class="ri-t">umiruje + sjaj — nema novih kiselina.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Purito Wonder Releaf Centella Eye Cream</span><span class="ri-t">oko očiju — centella okluzija.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">La Roche-Posay Cicaplast Lèvres</span><span class="ri-t">regeneracija — VEČE.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      <li class="ri"><span class="ri-i">🌙</span><span class="ri-n">Sulwhasoo Overnight Vitalizing Mask</span><span class="ri-t">🌙 sleep maska — Nedelja, poslednji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XIV ·</div>
+    </div>
+  </div>
+
   <div class="spread" id="s1">
-    <div class="pg pg-l">
-      <span class="co co-tl">✦</span><span class="co co-bl">🜔</span>
-      <div class="day-hdr">
-        <div class="day-title">💄  RUTINA PRE ŠMINKANJA</div>
-        <div class="day-sub"></div>
-        <div class="day-glyph">✦ ☽ ✦</div>
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">✦</span><span class="co tr">⋆</span><span class="co bl">⋆</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">🕒 Međurutina</div>
+        <div class="dsub">Kad dođem kući ranije</div>
+        <div class="dglyph">✦ ☽ ✦</div>
+        <div class="inc">Pausa. Cutis respirat.</div>
       </div>
-      <div style="text-align:center"><span class="badge am">Posebni Ritual</span></div>
+      <div class="bc"><span class="badge am">Posebni Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
       <ul class="rlist">
-        <li class="ri"><span class="ri-ico">✨</span><span class="ri-name">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-note">samo ovaj cleanser — koža nije prljava od SPF-a.</span></li>
-        <li class="ri"><span class="ri-ico">✨</span><span class="ri-name">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-note">umiruje i hidratizuje — 1. korak. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">✨</span><span class="ri-name">Hada Labo Premium Lotion</span><span class="ri-note">HA lotion — ⏱ Sačekati 30 sek pa krema.</span></li>
-        <li class="ri"><span class="ri-ico">✨</span><span class="ri-name">SERPENS DERM Eye Zone Cream</span><span class="ri-note">oko očiju — obavezno pre šminke. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">✨</span><span class="ri-name">VT Cosmetics PDRN Cream 100</span><span class="ri-note">POSLEDNJI KORAK — lagana, ne kliza ispod šminke. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">✨</span><span class="ri-name">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-note">posle PDRN kreme — pre šminkanja. Obavezno.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Revox B77 Lip Filler</span><span class="ri-note">punoća usana — ⏱ Sačekati 5-10 min pa šminkanje.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Neutrogena Lipcare Norwegian Formula</span><span class="ri-note">baza za usne. Nanosi odmah.</span></li>
-        <li class="ri"><span class="ri-ico">💋</span><span class="ri-name">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-note">vrh — poslednji korak pre šminkanja.</span></li>
-        </ul>
-      <span class="pgnum">XVIII</span>
+      <li class="ri"><span class="ri-i">🕒</span><span class="ri-n">Beauty of Joseon Radiance Cleansing Balm</span><span class="ri-t">1. korak — oil cleanser, skida SPF i šminku.</span></li>
+      <li class="ri"><span class="ri-i">🕒</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">2. korak double cleanse — low pH.</span></li>
+      <li class="ri"><span class="ri-i">🕒</span><span class="ri-n">Pyunkang Yul Essence Toner</span><span class="ri-t">toner/esencija — odmah. ⏱ 30 sek pa Hada Labo.</span></li>
+      <li class="ri"><span class="ri-i">🕒</span><span class="ri-n">Hada Labo Super Hydrator Lotion</span><span class="ri-t">HA slojevi — ⏱ 30 sek pa sledeći korak.</span></li>
+      <li class="ri"><span class="ri-i">🕒</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">DNEVNA KREMA — PDRN + ceramidi + kolagen.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Propanthen tegla</span><span class="ri-t">usne — osnovna nega.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XV ·</div>
     </div>
-    <div class="pg pg-r">
-      <span class="co co-tr">✦</span><span class="co co-br">☽</span>
-      <div class="colophon">
-        <div class="seal">🐍</div>
+  </div>
+
+  <div class="spread" id="s2">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">✦</span><span class="co tr">⋆</span><span class="co bl">⋆</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">🌓 Međudan</div>
+        <div class="dsub">Kad ne spavam celu noć</div>
+        <div class="dglyph">✦ ☽ ✦</div>
+        <div class="inc">Pausa. Cutis respirat.</div>
+      </div>
+      <div class="bc"><span class="badge pm">Posebni Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">🌓</span><span class="ri-n">Voda — ispiranje lica</span><span class="ri-t">samo mlaka voda, bez čistača.</span></li>
+      <li class="ri"><span class="ri-i">🌓</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">lagani hidratantni toner — odmah.</span></li>
+      <li class="ri"><span class="ri-i">🌓</span><span class="ri-n">Beauty of Joseon Glow Serum: Propolis + Niacinamide</span><span class="ri-t">umiruje + sjaj — nema novih kiselina.</span></li>
+      <li class="ri"><span class="ri-i">🌓</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa krema.</span></li>
+      <li class="ri"><span class="ri-i">🌓</span><span class="ri-n">Beauty of Joseon Dynasty Cream</span><span class="ri-t">noćna krema — ceramidi + adenozin + ginseng.</span></li>
+      <li class="ri"><span class="ri-i">🌓</span><span class="ri-n">Medicube Pink Caffeine / Super Cica Turmeric Mask</span><span class="ri-t">🌓 rotacija — poslednji korak, dok spavaš.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Lanolin</span><span class="ri-t">tanak sloj — zatvara i hrani.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy Original</span><span class="ri-t">vrh — seal, poslednji korak.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XVI ·</div>
+    </div>
+  </div>
+
+  <div class="spread" id="s3">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">✦</span><span class="co tr">⋆</span><span class="co bl">⋆</span><span class="co br">✦</span>
+      <div class="hdr">
+        <div class="dtitle">💄 Pre Šminkanja</div>
+        <div class="dglyph">✦ ☽ ✦</div>
+        <div class="inc">Vultus perfectus. Nemo resistit.</div>
+      </div>
+      <div class="bc"><span class="badge am">Posebni Ritual</span></div>
+      <div class="hdiv"><svg width="80" height="9" viewBox="0 0 80 9"><path d="M0,4.5 Q10,2 20,4.5 Q30,7 40,4.5 Q50,2 60,4.5 Q70,7 80,4.5" fill="none" stroke="#6b4c1a" stroke-width="0.8" opacity=".45"/><circle cx="20" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="40" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><circle cx="60" cy="4.5" r="1.3" fill="#7a5520" opacity=".4"/><path d="M40,4.5 L40,1.5 M37.5,3 L40,1.5 L42.5,3" stroke="#5a6828" stroke-width="0.7" opacity=".4" fill="none"/></svg></div>
+      <div class="scroll-body">
+      <ul class="rlist">
+      <li class="ri"><span class="ri-i">✨</span><span class="ri-n">Beauty of Joseon Green Plum Refreshing Cleanser</span><span class="ri-t">samo ovaj cleanser — koža nije prljava od SPF-a.</span></li>
+      <li class="ri"><span class="ri-i">✨</span><span class="ri-n">ANUA Heartleaf 77% Soothing Toner</span><span class="ri-t">umiruje i hidratizuje — 1. korak.</span></li>
+      <li class="ri"><span class="ri-i">✨</span><span class="ri-n">Hada Labo Premium Lotion</span><span class="ri-t">HA lotion — ⏱ 30 sek pa krema.</span></li>
+      <li class="ri"><span class="ri-i">✨</span><span class="ri-n">VT Cosmetics PDRN Cream 100</span><span class="ri-t">POSLEDNJI KORAK — lagana, ne kliza ispod šminke.</span></li>
+      <li class="ri"><span class="ri-i">✨</span><span class="ri-n">Beauty of Joseon Relief Sun SPF50+ PA++++</span><span class="ri-t">posle PDRN kreme — pre šminkanja. Obavezno.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Revox B77 Lip Filler</span><span class="ri-t">punoća usana — ⏱ 5-10 min pa šminkanje.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Neutrogena Lipcare Norwegian Formula</span><span class="ri-t">baza za usne.</span></li>
+      <li class="ri"><span class="ri-i">💋</span><span class="ri-n">Vaseline Lip Therapy ROSY LIPS</span><span class="ri-t">vrh — poslednji korak pre šminkanja.</span></li>
+      </ul>
+      </div>
+      <div class="pgn">· XVII ·</div>
+    </div>
+  </div>
+
+  <!-- ══ KOLOFONIJ ══ -->
+  <div class="spread" id="col">
+    <div class="pg">
+      <div class="vign"></div>
+      <span class="co tl">☽</span><span class="co tr">✦</span>
+      <span class="co bl">✦</span><span class="co br">☾</span>
+      <div class="colophon-wrap"><div class="colophon">
+        <svg width="50" height="50" viewBox="0 0 50 50" style="opacity:.55;filter:drop-shadow(0 0 6px rgba(80,40,8,0.3))">
+          <circle cx="25" cy="25" r="22" fill="none" stroke="#4a2c08" stroke-width="1.3"/>
+          <path d="M15,15 C8,20 7,31 14,38 C5,34 1,22 7,13 C11,7 20,4 25,7 C20,9 15,13 15,15Z" fill="rgba(30,12,2,0.6)" stroke="#5a3010" stroke-width=".9"/>
+          <line x1="25" y1="5" x2="25" y2="45" stroke="#3a1e08" stroke-width=".7" opacity=".35"/>
+          <line x1="5" y1="25" x2="45" y2="25" stroke="#3a1e08" stroke-width=".7" opacity=".35"/>
+          <circle cx="25" cy="25" r="5.5" fill="none" stroke="#4a2808" stroke-width=".9" opacity=".5"/>
+          <circle cx="25" cy="25" r="2" fill="#5a3410" opacity=".5"/>
+        </svg>
         <div class="fin">Finis</div>
         <div class="rule"></div>
-        <div class="verse">Ars longa.<br>Cutis memor.
+        <div class="verse">Ars longa.<br>Cutis memor.</div>
+        <div class="rule"></div>
+        <div class="fincurses">
+          Quae ungit, non vincit tempori.<br>
+          Nox sanat quod dies laesit.<br>
+          Formosa sum, quia volo esse.
+        </div>
       </div>
-      <span class="pgnum">XIX</span>
     </div>
   </div>
+
 </div>
 
 <script>
-  const spreads = document.querySelectorAll('.spread');
-  const N = spreads.length;
-  let cur = 0;
-  let flipping = false;
+const spreads=document.querySelectorAll('.spread');
+const N=spreads.length;
+let cur=0,flip=false;
+const book=document.getElementById('book');
+const cv=document.getElementById('flip-canvas');
+const cx=cv.getContext('2d');
 
-  const book  = document.getElementById('book');
-  const canvas = document.getElementById('flip-canvas');
-  const ctx   = canvas.getContext('2d');
+function rsz(){cv.width=book.offsetWidth;cv.height=book.offsetHeight;}
+rsz();
 
-  function resizeCanvas() {
-    canvas.width  = book.offsetWidth;
-    canvas.height = book.offsetHeight;
+// Page color — matches the parchment
+const PAGE_R=212, PAGE_G=184, PAGE_B=120;
+
+function ease(t){return t<.5?2*t*t:-1+(4-2*t)*t;}
+
+function drawFlip(t,dir){
+  const W=cv.width,H=cv.height;
+  const ang=t*Math.PI, front=ang<Math.PI/2;
+
+  // Cast shadow on the current page underneath
+  const shadowAlpha=Math.sin(ang)*0.55;
+  if(dir>0){
+    // flipping right-to-left: shadow falls on left side (behind the turning page)
+    const sg=cx.createLinearGradient(W,0,0,0);
+    sg.addColorStop(0,'rgba(0,0,0,0)');
+    sg.addColorStop(0.6,`rgba(0,0,0,${shadowAlpha*0.4})`);
+    sg.addColorStop(1,`rgba(0,0,0,${shadowAlpha})`);
+    cx.fillStyle=sg; cx.fillRect(0,0,W,H);
+  } else {
+    const sg=cx.createLinearGradient(0,0,W,0);
+    sg.addColorStop(0,'rgba(0,0,0,0)');
+    sg.addColorStop(0.6,`rgba(0,0,0,${shadowAlpha*0.4})`);
+    sg.addColorStop(1,`rgba(0,0,0,${shadowAlpha})`);
+    cx.fillStyle=sg; cx.fillRect(0,0,W,H);
   }
-  resizeCanvas();
 
-  const N_STRIPS = 60;
+  // Draw the curling page strip by strip
+  const STRIPS=80;
+  const sw=W/STRIPS;
 
-  function easeInOut(t) {
-    return t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
-  }
+  for(let i=0;i<STRIPS;i++){
+    const s=(i+.5)/STRIPS;
+    // distance from the hinge (left edge when going forward, right when back)
+    const d=dir>0?s:(1-s);
 
-  function pageAngle(t) {
-    return t * Math.PI;
-  }
-
-  function drawCurledPage(t, dir) {
-    const W  = canvas.width;
-    const H  = canvas.height;
-    const pH = book.offsetHeight;
-    const spineX = W / 2;
-    const pageW  = W / 2;
-
-    const angle = pageAngle(t);
-    const isFront = angle < Math.PI / 2;
-
-    const shadowStrength = Math.sin(angle) * 0.55;
-    if (dir > 0) {
-      const sg = ctx.createLinearGradient(spineX - pageW, 0, spineX, 0);
-      sg.addColorStop(0, 'rgba(0,0,0,0)');
-      sg.addColorStop(1, `rgba(0,0,0,${shadowStrength})`);
-      ctx.fillStyle = sg;
-      ctx.fillRect(0, 0, spineX, H);
+    // x position of this strip as it curls
+    // when t=0 strip covers full page; as t→0.5 it sweeps to hinge; t→1 it's gone
+    let sx;
+    if(dir>0){
+      // hinge at left (x=0), page sweeps left
+      // at t=0: strip at x=d*W; at t=0.5: all at x=0; at t=1: behind at negative x
+      sx = d * W * Math.cos(ang);
     } else {
-      const sg = ctx.createLinearGradient(spineX, 0, spineX + pageW, 0);
-      sg.addColorStop(0, `rgba(0,0,0,${shadowStrength})`);
-      sg.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = sg;
-      ctx.fillRect(spineX, 0, pageW, H);
+      // hinge at right (x=W), page sweeps right
+      sx = W - d * W * Math.cos(ang);
     }
 
-    const stripW = pageW / N_STRIPS;
+    // vertical curl — page bows in the middle
+    const curl=Math.sin(ang)*22*Math.sin(d*Math.PI);
+    const topY=curl, botY=H-curl;
 
-    for (let i = 0; i < N_STRIPS; i++) {
-      const s = (i + 0.5) / N_STRIPS;
-      const stripAngle = angle * s;
-      const cosA = Math.cos(stripAngle);
-      const sinA = Math.sin(stripAngle);
-
-      let screenX;
-      if (dir > 0) {
-        screenX = spineX + (pageW - s * pageW) * Math.cos(angle);
-      } else {
-        screenX = spineX - (pageW - s * pageW) * Math.cos(angle);
-      }
-
-      const verticalCurl = Math.sin(angle) * 18 * Math.sin(s * Math.PI);
-      const topY    = verticalCurl;
-      const bottomY = H - verticalCurl;
-
-      let brightness;
-      if (isFront) {
-        brightness = 0.82 + 0.18 * Math.sin(s * Math.PI);
-        brightness *= (0.75 + 0.25 * Math.cos(angle));
-      } else {
-        brightness = 0.55 + 0.15 * Math.sin(s * Math.PI);
-      }
-      brightness = Math.max(0.3, Math.min(1.2, brightness));
-
-      const r = Math.round(232 * brightness);
-      const g = Math.round(216 * brightness);
-      const b = Math.round(140 * brightness);
-
-      const x0 = screenX;
-      const x1 = screenX + (dir > 0 ? -1 : 1) * stripW * Math.abs(Math.cos(angle));
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x0, topY);
-      ctx.lineTo(x1, topY * 0.92);
-      ctx.lineTo(x1, bottomY + (H - bottomY) * 0.08);
-      ctx.lineTo(x0, bottomY);
-      ctx.closePath();
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fill();
-
-      if (i === N_STRIPS - 1) {
-        ctx.strokeStyle = isFront
-          ? `rgba(255,245,200,${0.4 * Math.sin(angle)})`
-          : `rgba(100,80,20,${0.3 * Math.sin(angle)})`;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-      ctx.restore();
+    // brightness — front face lit, back face dim
+    let br;
+    if(front){
+      // front face: lit in center, slightly shadowed toward hinge
+      br=(0.82+0.16*Math.sin(d*Math.PI))*(0.7+0.3*Math.cos(ang));
+    } else {
+      // back face: darker, shows reverse side
+      br=0.42+0.1*Math.sin(d*Math.PI);
     }
+    br=Math.max(.2,Math.min(1.05,br));
 
-    const creaseAlpha = Math.sin(angle) * 0.7;
-    const creaseW = 14 * Math.sin(angle);
-    if (creaseW > 0) {
-      const cg = ctx.createLinearGradient(spineX - creaseW, 0, spineX + creaseW, 0);
-      cg.addColorStop(0,   'rgba(0,0,0,0)');
-      cg.addColorStop(0.4, `rgba(0,0,0,${creaseAlpha * 0.6})`);
-      cg.addColorStop(0.5, `rgba(0,0,0,${creaseAlpha})`);
-      cg.addColorStop(0.6, `rgba(0,0,0,${creaseAlpha * 0.6})`);
-      cg.addColorStop(1,   'rgba(0,0,0,0)');
-      ctx.fillStyle = cg;
-      ctx.fillRect(spineX - creaseW, 0, creaseW * 2, H);
+    // Parchment color with age variation per strip
+    const jitter=(Math.sin(i*7.3)*0.04); // subtle tonal variation
+    const r=Math.round((PAGE_R+jitter*30)*br);
+    const g=Math.round((PAGE_G+jitter*20)*br);
+    const b=Math.round((PAGE_B+jitter*8)*br);
+
+    // strip vertices with curl
+    const x0=sx;
+    const x1=dir>0 ? sx-sw*Math.abs(Math.cos(ang)) : sx+sw*Math.abs(Math.cos(ang));
+
+    cx.save();
+    cx.beginPath();
+    cx.moveTo(x0, topY);
+    cx.lineTo(x1, topY*0.95);
+    cx.lineTo(x1, botY+(H-botY)*0.05);
+    cx.lineTo(x0, botY);
+    cx.closePath();
+    cx.fillStyle=`rgb(${r},${g},${b})`;
+    cx.fill();
+
+    // Edge highlight — bright along the fold, dark on back
+    if((dir>0&&i===0)||(dir<0&&i===STRIPS-1)){
+      cx.strokeStyle=front
+        ?`rgba(255,235,180,${0.6*Math.sin(ang)})`
+        :`rgba(100,70,20,${0.3*Math.sin(ang)})`;
+      cx.lineWidth=2.5; cx.stroke();
     }
+    cx.restore();
   }
 
-  function animateFlip(dir, onMidpoint) {
-    flipping = true;
-    const DURATION = 620;
-    const start = performance.now();
-    let midpointFired = false;
-
-    function frame(now) {
-      const rawT = Math.min((now - start) / DURATION, 1);
-      const t    = easeInOut(rawT);
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawCurledPage(t, dir);
-
-      if (!midpointFired && rawT >= 0.5) {
-        midpointFired = true;
-        onMidpoint();
-      }
-
-      if (rawT < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        flipping = false;
-      }
-    }
-
-    requestAnimationFrame(frame);
+  // Spine crease shadow
+  const ca=Math.sin(ang)*0.85, cw=16*Math.sin(ang);
+  if(cw>0){
+    const hingeX=dir>0?0:W;
+    const cg=cx.createLinearGradient(hingeX-cw,0,hingeX+cw,0);
+    cg.addColorStop(0,'rgba(0,0,0,0)');
+    cg.addColorStop(.4,`rgba(0,0,0,${ca*.55})`);
+    cg.addColorStop(.5,`rgba(0,0,0,${ca})`);
+    cg.addColorStop(.6,`rgba(0,0,0,${ca*.55})`);
+    cg.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=cg;
+    cx.fillRect(hingeX-cw,0,cw*2,H);
   }
+}
 
-  function go(dir) {
-    if (flipping) return;
-    const next = cur + dir;
-    if (next < 0 || next >= N) return;
-
-    const zp = document.getElementById('z-prev');
-    const zn = document.getElementById('z-next');
-
-    animateFlip(dir, () => {
-      spreads[cur].classList.remove('active');
-      cur = next;
-      spreads[cur].classList.add('active');
-      zp.style.display = cur <= 0  ? 'none' : 'block';
-      zn.style.display = cur >= N-1 ? 'none' : 'block';
-    });
+function animFlip(dir,cb){
+  flip=true;
+  const DUR=700, start=performance.now(); let fired=false;
+  function fr(now){
+    const raw=Math.min((now-start)/DUR,1), t=ease(raw);
+    cx.clearRect(0,0,cv.width,cv.height);
+    drawFlip(t,dir);
+    if(!fired&&raw>=.5){fired=true;cb();}
+    if(raw<1) requestAnimationFrame(fr);
+    else{cx.clearRect(0,0,cv.width,cv.height);flip=false;}
   }
+  requestAnimationFrame(fr);
+}
 
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+function go(dir){
+  if(flip)return;
+  const next=cur+dir;
+  if(next<0||next>=N)return;
+  animFlip(dir,()=>{
+    spreads[cur].classList.remove('active');
+    cur=next;
+    spreads[cur].classList.add('active');
+    document.getElementById('zp').style.display=cur<=0?'none':'block';
+    document.getElementById('zn').style.display=cur>=N-1?'none':'block';
   });
+}
 
-  window.addEventListener('resize', resizeCanvas);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+window.addEventListener('resize',rsz);
+
+// ── Swipe gesture ──
+let tx=0,ty=0,sw=false;
+document.addEventListener('touchstart',e=>{
+  if(e.target.closest('.click-prev,.click-next'))return;
+  const t=e.changedTouches[0];
+  tx=t.clientX; ty=t.clientY; sw=true;
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!sw)return; sw=false;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-tx, dy=t.clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)*1.5 && Math.abs(dx)>38){
+    dx<0?go(1):go(-1);
+  }
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(!sw)return;
+  const dx=Math.abs(e.changedTouches[0].clientX-tx);
+  const dy=Math.abs(e.changedTouches[0].clientY-ty);
+  if(dx>dy*1.2 && dx>18) e.preventDefault();
+},{passive:false});
+
+// ── Day label in pgnum ──
+const LABELS=[
+  'Korica',
+  'Ponedeljak · Jutro','Ponedeljak · Veče',
+  'Utorak · Jutro','Utorak · Veče',
+  'Sreda · Jutro','Sreda · Veče',
+  'Četvrtak · Jutro','Četvrtak · Veče',
+  'Petak · Jutro','Petak · Veče',
+  'Subota · Jutro','Subota · Veče',
+  'Nedelja · Jutro','Nedelja · Veče',
+  'Međurutina','Međudan','Pre Šminkanja',
+  'Finis'
+];
+function updateLabel(){
+  spreads.forEach((s,i)=>{
+    const pn=s.querySelector('.pgn');
+    if(pn && LABELS[i]) pn.textContent=LABELS[i];
+  });
+}
+updateLabel();
 </script>
 </body>
 </html>
